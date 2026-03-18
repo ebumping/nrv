@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NERV Authentic UI Preview</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Archivo+Narrow:wght@400;600;700&display=swap');
+    
+    :root {
+      --nerv-orange: #FF6600;
+      --nerv-red: #CC0000;
+      --nerv-green: #00FF66;
+      --nerv-cyan: #00CCFF;
+      --nerv-magenta: #FF00CC;
+      --nerv-amber: #FFAA00;
+      --nerv-bg: #000000;
+      --nerv-text-dim: #666666;
+      --nerv-font-mono: 'Share Tech Mono', monospace;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--nerv-bg);
+      font-family: var(--nerv-font-mono);
+      color: var(--nerv-orange);
+      padding: 24px;
+      min-height: 100vh;
+    }
+    
+    .hud-frame {
+      position: relative;
+      border: 1px solid var(--nerv-orange);
+      background: var(--nerv-bg);
+      margin-bottom: 24px;
+    }
+    
+    .hud-frame.cyan { border-color: var(--nerv-cyan); }
+    .hud-frame.green { border-color: var(--nerv-green); }
+    .hud-frame.magenta { border-color: var(--nerv-magenta); }
+    .hud-frame.red { border-color: var(--nerv-red); }
+    
+    .corner-bracket {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+    }
+    .corner-bracket.tl { top: -1px; left: -1px; }
+    .corner-bracket.tr { top: -1px; right: -1px; }
+    .corner-bracket.bl { bottom: -1px; left: -1px; }
+    .corner-bracket.br { bottom: -1px; right: -1px; }
+    
+    .label-bar {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 12px;
+      border-bottom: 1px solid currentColor;
+      background: rgba(255,102,0,0.05);
+    }
+    
+    .label-bar label {
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 12px;
+    }
+    
+    .label-jp {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    
+    .content {
+      padding: 16px;
+    }
+    
+    /* Waveform Canvas */
+    .waveform-container {
+      background: #000;
+      height: 140px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* Contour Map */
+    .contour-map {
+      height: 200px;
+      background: #000;
+      position: relative;
+    }
+    
+    /* Hexagonal Grid */
+    .hex-grid {
+      height: 250px;
+      background: #000;
+    }
+    
+    /* Status Grid */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    
+    .status-item {
+      text-align: center;
+      padding: 12px;
+    }
+    
+    .status-label {
+      font-size: 10px;
+      color: var(--nerv-text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .status-value {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    
+    .status-value.green { color: var(--nerv-green); }
+    .status-value.amber { color: var(--nerv-amber); }
+    .status-value.red { color: var(--nerv-red); }
+    
+    /* Emergency Banner */
+    .emergency {
+      text-align: center;
+      padding: 32px;
+      background: linear-gradient(90deg, transparent, rgba(204,0,0,0.1), transparent);
+    }
+    
+    .emergency-text {
+      font-family: 'Archivo Narrow', sans-serif;
+      font-size: 48px;
+      font-weight: bold;
+      color: var(--nerv-red);
+      animation: strobe 500ms infinite;
+    }
+    
+    @keyframes strobe {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="hud-frame" style="margin-bottom: 24px;">
+    <svg class="corner-bracket tl" viewBox="0 0 16 16"><path d="M0,16 L0,0 L16,0" fill="none" stroke="var(--nerv-orange)" stroke-width="1"/></svg>
+    <svg class="corner-bracket tr" viewBox="0 0 16 16"><path d="M0,0 L16,0 L16,16" fill="none" stroke="var(--nerv-orange)" stroke-width="1"/></svg>
+    <svg class="corner-bracket bl" viewBox="0 0 16 16"><path d="M0,0 L0,16 L16,16" fill="none" stroke="var(--nerv-orange)" stroke-width="1"/></svg>
+    <svg class="corner-bracket br" viewBox="0 0 16 16"><path d="M16,0 L16,16 L0,16" fill="none" stroke="var(--nerv-orange)" stroke-width="1"/></svg>
+    <div class="label-bar">
+      <label>NERV UI COMPONENT LIBRARY</label>
+      <span class="label-jp">NERV UI コンポーネントライブラリ</span>
+    </div>
+    <div class="content" style="text-align: center;">
+      <h1 style="font-family: 'Archivo Narrow', sans-serif; font-size: 32px; margin-bottom: 8px;">AUTHENTIC EVA DESIGN SYSTEM</h1>
+      <p style="color: var(--nerv-text-dim); font-size: 12px;">Black/White/Red • Orange/Cyan/Green accents • Hexagonal geometry</p>
+    </div>
+  </div>
+  
+  <!-- Waveform Monitors -->
+  <div class="grid" style="margin-bottom: 24px;">
+    <div class="hud-frame magenta">
+      <svg class="corner-bracket tl" viewBox="0 0 16 16"><path d="M0,16 L0,0 L16,0" fill="none" stroke="var(--nerv-magenta)" stroke-width="1"/></svg>
+      <svg class="corner-bracket tr" viewBox="0 0 16 16"><path d="M0,0 L16,0 L16,16" fill="none" stroke="var(--nerv-magenta)" stroke-width="1"/></svg>
+      <svg class="corner-bracket bl" viewBox="0 0 16 16"><path d="M0,0 L0,16 L16,16" fill="none" stroke="var(--nerv-magenta)" stroke-width="1"/></svg>
+      <svg class="corner-bracket br" viewBox="0 0 16 16"><path d="M16,0 L16,16 L0,16" fill="none" stroke="var(--nerv-magenta)" stroke-width="1"/></svg>
+      <div class="label-bar" style="border-color: var(--nerv-magenta); color: var(--nerv-magenta);">
+        <label>SINUSOIDAL MONITOR A</label>
+        <span class="label-jp">正弦波モニター</span>
+      </div>
+      <div class="waveform-container">
+        <canvas id="wave1"></canvas>
+      </div>
+    </div>
+    
+    <div class="hud-frame cyan">
+      <svg class="corner-bracket tl" viewBox="0 0 16 16"><path d="M0,16 L0,0 L16,0" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+      <svg class="corner-bracket tr" viewBox="0 0 16 16"><path d="M0,0 L16,0 L16,16" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+      <svg class="corner-bracket bl" viewBox="0 0 16 16"><path d="M0,0 L0,16 L16,16" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+      <svg class="corner-bracket br" viewBox="0 0 16 16"><path d="M16,0 L16,16 L0,16" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+      <div class="label-bar" style="border-color: var(--nerv-cyan); color: var(--nerv-cyan);">
+        <label>SINUSOIDAL MONITOR B</label>
+      </div>
+      <div class="waveform-container">
+        <canvas id="wave2"></canvas>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Contour Map -->
+  <div class="hud-frame cyan" style="margin-bottom: 24px;">
+    <svg class="corner-bracket tl" viewBox="0 0 16 16"><path d="M0,16 L0,0 L16,0" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+    <svg class="corner-bracket tr" viewBox="0 0 16 16"><path d="M0,0 L16,0 L16,16" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+    <svg class="corner-bracket bl" viewBox="0 0 16 16"><path d="M0,0 L0,16 L16,16" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+    <svg class="corner-bracket br" viewBox="0 0 16 16"><path d="M16,0 L16,16 L0,16" fill="none" stroke="var(--nerv-cyan)" stroke-width="1"/></svg>
+    <div class="label-bar" style="border-color: var(--nerv-cyan); color: var(--nerv-cyan);">
+      <label>AGENT SWARM TOPOLOGY</label>
+      <span class="label-jp">エージェント群トポロジー</span>
+    </div>
+    <div class="contour-map">
+      <canvas id="contour"></canvas>
+    </div>
+  </div>
+  
+  <!-- Hexagonal Cluster -->
+  <div class="hud-frame green" style="margin-bottom: 24px;">
+    <svg class="corner-bracket tl" viewBox="0 0 16 16"><path d="M0,16 L0,0 L16,0" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <svg class="corner-bracket tr" viewBox="0 0 16 16"><path d="M0,0 L16,0 L16,16" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <svg class="corner-bracket bl" viewBox="0 0 16 16"><path d="M0,0 L0,16 L16,16" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <svg class="corner-bracket br" viewBox="0 0 16 16"><path d="M16,0 L16,16 L0,16" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <div class="label-bar" style="border-color: var(--nerv-green); color: var(--nerv-green);">
+      <label>SKILL TAXONOMY MATRIX</label>
+      <span class="label-jp">スキル分類マトリックス</span>
+    </div>
+    <div class="hex-grid">
+      <canvas id="hexgrid"></canvas>
+    </div>
+  </div>
+  
+  <!-- Status Frames -->
+  <div class="grid grid-3" style="margin-bottom: 24px;">
+    <div class="hud-frame green">
+      <div class="label-bar" style="border-color: var(--nerv-green); color: var(--nerv-green); font-size: 11px;">
+        <label>SYSTEM STATUS</label>
+      </div>
+      <div class="content">
+        <div style="color: var(--nerv-green); margin-bottom: 8px;">CORE: ONLINE</div>
+        <div style="color: var(--nerv-green); margin-bottom: 8px;">SYNC RATIO: 98.2%</div>
+        <div style="color: var(--nerv-text-dim);">UPTIME: 04:32:17</div>
+      </div>
+    </div>
+    
+    <div class="hud-frame" style="border-color: var(--nerv-amber);">
+      <div class="label-bar" style="border-color: var(--nerv-amber); color: var(--nerv-amber); font-size: 11px;">
+        <label>WARNING</label>
+        <span class="label-jp">警告</span>
+      </div>
+      <div class="content">
+        <div style="color: var(--nerv-amber); animation: pulse 1s infinite;">ELEVATED ACTIVITY DETECTED</div>
+        <div style="color: var(--nerv-text-dim); margin-top: 8px; font-size: 10px;">SECTOR: G-7</div>
+      </div>
+    </div>
+    
+    <div class="hud-frame red">
+      <div class="label-bar" style="border-color: var(--nerv-red); color: var(--nerv-red); font-size: 11px;">
+        <label>CRITICAL</label>
+        <span class="label-jp">緊急</span>
+      </div>
+      <div class="content">
+        <div style="color: var(--nerv-red); animation: strobe 500ms infinite; font-weight: bold;">CONTAINMENT BREACH</div>
+        <div style="color: var(--nerv-text-dim); margin-top: 8px;">LEVEL: 4</div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Emergency Banner -->
+  <div class="hud-frame red" style="margin-bottom: 24px;">
+    <div class="label-bar" style="border-color: var(--nerv-red); color: var(--nerv-red); font-size: 11px;">
+      <label>EMERGENCY ALERT</label>
+      <span class="label-jp">非常事態</span>
+    </div>
+    <div class="emergency">
+      <div class="emergency-text">EMERGENCY</div>
+      <div style="color: var(--nerv-text-dim); margin-top: 8px;">全都市、第1種戦闘配備</div>
+    </div>
+  </div>
+  
+  <!-- Neural Pattern -->
+  <div class="hud-frame green">
+    <svg class="corner-bracket tl" viewBox="0 0 16 16"><path d="M0,16 L0,0 L16,0" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <svg class="corner-bracket tr" viewBox="0 0 16 16"><path d="M0,0 L16,0 L16,16" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <svg class="corner-bracket bl" viewBox="0 0 16 16"><path d="M0,0 L0,16 L16,16" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <svg class="corner-bracket br" viewBox="0 0 16 16"><path d="M16,0 L16,16 L0,16" fill="none" stroke="var(--nerv-green)" stroke-width="1"/></svg>
+    <div class="label-bar" style="border-color: var(--nerv-green); color: var(--nerv-green);">
+      <label>NEURAL PATTERN ANALYSIS</label>
+    </div>
+    <div class="waveform-container" style="height: 100px;">
+      <canvas id="wave3"></canvas>
+    </div>
+  </div>
+
+  <script>
+    // Waveform animation
+    function drawWaveform(canvas, color, waveCount, frequency, amplitude) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.offsetWidth;
+      const h = canvas.height = canvas.offsetHeight;
+      let time = 0;
+      
+      function animate() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, w, h);
+        
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < 10; i++) {
+          for (let j = 0; j < 6; j++) {
+            const x = (i / 10) * w;
+            const y = (j / 6) * h;
+            ctx.beginPath();
+            ctx.moveTo(x - 4, y);
+            ctx.lineTo(x + 4, y);
+            ctx.moveTo(x, y - 4);
+            ctx.lineTo(x, y + 4);
+            ctx.stroke();
+          }
+        }
+        
+        // Waves
+        for (let wv = 0; wv < waveCount; wv++) {
+          const alpha = wv === Math.floor(waveCount / 2) ? 1 : 0.3 + (wv / waveCount) * 0.4;
+          ctx.strokeStyle = color.replace(')', `, ${alpha})`).replace('rgb', 'rgba');
+          ctx.lineWidth = wv === Math.floor(waveCount / 2) ? 2 : 1;
+          ctx.beginPath();
+          
+          for (let x = 0; x < w; x++) {
+            const phase = (wv / waveCount) * Math.PI * 2;
+            const freq = frequency + (wv * 0.1);
+            const amp = amplitude * (1 - Math.abs(wv - waveCount / 2) / waveCount * 0.5);
+            const y = h / 2 + Math.sin((x / w) * freq * Math.PI * 2 + time + phase) * amp * (h / 2) * 0.85;
+            
+            if (x === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+        
+        time += 0.05;
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+    
+    // Contour map
+    function drawContour(canvas) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.offsetWidth;
+      const h = canvas.height = canvas.offsetHeight;
+      let time = 0;
+      
+      function noise(x, y, t) {
+        return Math.sin(x * 0.5 + t) * Math.cos(y * 0.3 + t * 0.7) +
+               Math.sin(x * 0.2 - y * 0.4 + t * 0.3) * 0.5;
+      }
+      
+      function animate() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, w, h);
+        
+        // Reference lines
+        ctx.strokeStyle = 'rgba(204, 0, 0, 0.3)';
+        ctx.lineWidth = 1;
+        for (let i = 1; i <= 5; i++) {
+          const y = (i / 6) * h;
+          ctx.beginPath();
+          ctx.moveTo(40, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+        
+        // Contour lines
+        ctx.strokeStyle = 'rgba(0, 204, 255, 0.5)';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < 20; i++) {
+          ctx.beginPath();
+          const yBase = (i / 20) * 100;
+          const amp = 8 + Math.sin(i * 0.3) * 4;
+          
+          for (let x = 0; x <= 100; x += 2) {
+            const y = (yBase + noise(x * 0.08, i, time * 0.01 + i * 0.5) * amp) * (h / 100);
+            if (x === 0) ctx.moveTo(40 + (x / 100) * (w - 40), Math.max(0, Math.min(h, y)));
+            else ctx.lineTo(40 + (x / 100) * (w - 40), Math.max(0, Math.min(h, y)));
+          }
+          ctx.stroke();
+        }
+        
+        // Nodes
+        const nodes = [
+          {x: 0.3, y: 0.4, label: 'A1'},
+          {x: 0.5, y: 0.3, label: 'A2'},
+          {x: 0.7, y: 0.5, label: 'A3'},
+          {x: 0.4, y: 0.7, label: 'A4'},
+          {x: 0.6, y: 0.6, label: 'A5'},
+        ];
+        
+        nodes.forEach(node => {
+          const x = 40 + node.x * (w - 60);
+          const y = 10 + node.y * (h - 40);
+          
+          // Glow
+          ctx.beginPath();
+          ctx.arc(x, y, 8, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(0, 204, 255, 0.2)';
+          ctx.fill();
+          
+          // Core
+          ctx.beginPath();
+          ctx.arc(x, y, 4, 0, Math.PI * 2);
+          ctx.fillStyle = '#00CCFF';
+          ctx.fill();
+          
+          // Label
+          ctx.fillStyle = '#FF6600';
+          ctx.font = '8px Share Tech Mono';
+          ctx.textAlign = 'center';
+          ctx.fillText(node.label, x, y - 10);
+        });
+        
+        // Corner readouts
+        ctx.fillStyle = '#00FF66';
+        ctx.font = '10px Share Tech Mono';
+        ctx.fillText('+ 00312794', 50, 16);
+        ctx.textAlign = 'right';
+        ctx.fillText('00819652', w - 10, 16);
+        ctx.textAlign = 'left';
+        ctx.fillText('- 00327405', 50, h - 10);
+        ctx.textAlign = 'right';
+        ctx.fillText('+ 00210745', w - 10, h - 10);
+        
+        time++;
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+    
+    // Hexagonal grid
+    function drawHexGrid(canvas) {
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.offsetWidth;
+      const h = canvas.height = canvas.offsetHeight;
+      
+      function hexPoints(cx, cy, size) {
+        const points = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = (60 * i - 30) * Math.PI / 180;
+          points.push(`${cx + size * Math.cos(angle)},${cy + size * Math.sin(angle)}`);
+        }
+        return points.join(' ');
+      }
+      
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, w, h);
+      
+      // Generate hex positions (radial)
+      const hexes = [];
+      const size = 20;
+      const centerX = w / 2;
+      const centerY = h / 2;
+      
+      for (let q = -2; q <= 2; q++) {
+        for (let r = -2; r <= 2; r++) {
+          if (Math.abs(q + r) <= 2) {
+            const x = centerX + size * 1.5 * q;
+            const y = centerY + size * Math.sqrt(3) * (r + q / 2);
+            hexes.push({x, y, q, r});
+          }
+        }
+      }
+      
+      // Draw hexes
+      hexes.forEach(hex => {
+        const dist = Math.sqrt(hex.q * hex.q + hex.r * hex.r);
+        const status = dist === 0 ? 'active' : dist < 1.5 ? 'active' : 'inactive';
+        const color = status === 'active' ? '#00FF66' : '#666666';
+        
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1;
+        
+        const points = hexPoints(hex.x, hex.y, size).split(' ').map(p => {
+          const [px, py] = p.split(',');
+          return {x: parseFloat(px), y: parseFloat(py)};
+        });
+        
+        ctx.moveTo(points[0].x, points[0].y);
+        points.forEach(p => ctx.lineTo(p.x, p.y));
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Center dot for active
+        if (status === 'active') {
+          ctx.beginPath();
+          ctx.arc(hex.x, hex.y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = color;
+          ctx.fill();
+        }
+      });
+      
+      // Labels
+      const labels = ['CORE', 'EXEC', 'MEM', 'NET', 'FILE', 'TERM'];
+      ctx.fillStyle = '#FF6600';
+      ctx.font = '6px Share Tech Mono';
+      ctx.textAlign = 'center';
+      hexes.slice(0, 6).forEach((hex, i) => {
+        ctx.fillText(labels[i], hex.x, hex.y + size + 10);
+      });
+    }
+    
+    // Initialize
+    setTimeout(() => {
+      drawWaveform(document.getElementById('wave1'), 'rgb(255, 0, 204)', 8, 2.5, 0.85);
+      drawWaveform(document.getElementById('wave2'), 'rgb(0, 204, 255)', 6, 1.8, 0.75);
+      drawWaveform(document.getElementById('wave3'), 'rgb(0, 255, 102)', 10, 3, 0.9);
+      drawContour(document.getElementById('contour'));
+      drawHexGrid(document.getElementById('hexgrid'));
+    }, 100);
+  </script>
+</body>
+</html>

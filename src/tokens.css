@@ -1,0 +1,179 @@
+/**
+ * NERV AUTHENTIC DESIGN TOKENS
+ * Evangelion UI System - Black/White/Red with orange/cyan/green accents
+ * Based on direct visual audit of source material
+ */
+
+:root {
+  /* ═══════════════════════════════════════════════════════════════════════
+   * COLOR PALETTE
+   * ═══════════════════════════════════════════════════════════════════════ */
+  
+  /* Primary System Colors */
+  --nerv-orange: #FF6600;
+  --nerv-red: #CC0000;
+  --nerv-green: #00FF66;
+  --nerv-cyan: #00CCFF;
+  --nerv-magenta: #FF00CC;
+  --nerv-blue: #0066FF;
+  --nerv-yellow: #CCCC00;
+  --nerv-amber: #FFAA00;
+  
+  /* Background */
+  --nerv-bg: #000000;
+  --nerv-bg-elevated: #0A0A0A;
+  --nerv-bg-panel: #0F0F0F;
+  
+  /* Text */
+  --nerv-text-bright: #FFFFFF;
+  --nerv-text-normal: #CCCCCC;
+  --nerv-text-dim: #666666;
+  
+  /* ═══════════════════════════════════════════════════════════════════════
+   * TYPOGRAPHY
+   * ═══════════════════════════════════════════════════════════════════════ */
+  
+  /* Font Families */
+  --nerv-font-mono: 'Share Tech Mono', 'M+ 2m', 'Courier New', Consolas, monospace;
+  --nerv-font-condensed: 'Archivo Narrow', 'Roboto Condensed', 'Swiss 911', sans-serif;
+  --nerv-font-gothic: 'MS Gothic', 'M+ 2m', monospace; /* Japanese labels */
+  
+  /* Font Sizes */
+  --nerv-text-xs: 10px;
+  --nerv-text-sm: 12px;
+  --nerv-text-md: 14px;
+  --nerv-text-lg: 18px;
+  --nerv-text-xl: 24px;
+  --nerv-text-2xl: 32px;
+  --nerv-text-3xl: 48px;
+  --nerv-text-display: 72px;
+  
+  /* Typography Tokens by Usage */
+  --nerv-mono-primary: bold 24px/1 var(--nerv-font-condensed);
+  --nerv-mono-data: normal 14px/1.2 var(--nerv-font-mono);
+  --nerv-mono-label: normal 10px/1 var(--nerv-font-mono);
+  --nerv-kanji-label: normal 12px/1 var(--nerv-font-gothic);
+  
+  /* ═══════════════════════════════════════════════════════════════════════
+   * SPACING & BORDERS
+   * ═══════════════════════════════════════════════════════════════════════ */
+  
+  --nerv-border-thin: 1px;
+  --nerv-border-medium: 2px;
+  --nerv-border-thick: 3px;
+  
+  --nerv-space-xs: 4px;
+  --nerv-space-sm: 8px;
+  --nerv-space-md: 16px;
+  --nerv-space-lg: 24px;
+  --nerv-space-xl: 32px;
+  
+  /* ═══════════════════════════════════════════════════════════════════════
+   * ANIMATION TIMING
+   * ═══════════════════════════════════════════════════════════════════════ */
+  
+  --nerv-duration-fast: 100ms;
+  --nerv-duration-normal: 200ms;
+  --nerv-duration-slow: 400ms;
+  --nerv-duration-pulse: 1000ms;
+  --nerv-duration-strobe: 500ms;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * KEYFRAME ANIMATIONS
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+@keyframes nerv-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes nerv-strobe {
+  0%, 100% { opacity: 1; visibility: visible; }
+  50% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes nerv-scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes nerv-phase-shift {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: 50; }
+}
+
+@keyframes nerv-gradient-cycle {
+  0%, 100% { filter: hue-rotate(0deg); }
+  50% { filter: hue-rotate(15deg); }
+}
+
+@keyframes nerv-chevron-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * UTILITY CLASSES
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+.nerv-text-primary {
+  font: var(--nerv-mono-primary);
+  color: var(--nerv-orange);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.nerv-text-data {
+  font: var(--nerv-mono-data);
+  color: var(--nerv-text-normal);
+}
+
+.nerv-text-label {
+  font: var(--nerv-mono-label);
+  color: var(--nerv-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.nerv-glow-orange {
+  text-shadow: 0 0 4px var(--nerv-orange), 0 0 8px var(--nerv-orange);
+}
+
+.nerv-glow-green {
+  text-shadow: 0 0 4px var(--nerv-green), 0 0 8px var(--nerv-green);
+}
+
+.nerv-glow-red {
+  text-shadow: 0 0 4px var(--nerv-red), 0 0 12px var(--nerv-red);
+}
+
+.nerv-pulse {
+  animation: nerv-pulse var(--nerv-duration-pulse) infinite;
+}
+
+.nerv-strobe {
+  animation: nerv-strobe var(--nerv-duration-strobe) infinite;
+}
+
+/* Crosshair primitives */
+.nerv-crosshair-plus::before,
+.nerv-crosshair-plus::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+}
+
+.nerv-crosshair-plus::before {
+  width: 100%;
+  height: 1px;
+  top: 50%;
+  left: 0;
+}
+
+.nerv-crosshair-plus::after {
+  width: 1px;
+  height: 100%;
+  left: 50%;
+  top: 0;
+}

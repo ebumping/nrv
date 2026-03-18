@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NERV // EVA INTERFACE</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           TRUE EVA INTERFACE - Warm amber, 3D perspective, layered depth
+           Based on NGE_UI_REFERENCE.md specifications
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        :root {
+            /* WARM palette - not cold white/black */
+            --amber: #FF8C00;
+            --amber-bright: #FFAA33;
+            --orange: #FF6A00;
+            --crimson: #DC143C;
+            --blood: #8B0000;
+            --green: #39FF14;
+            --cyan: #00CED1;
+            --yellow: #FFD700;
+            
+            /* Warm backgrounds */
+            --terminal: #0A0806;
+            --panel: #1A1410;
+            --panel-mid: #2A2018;
+            --border: #3A2A1A;
+            --border-bright: #4A3A2A;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--terminal);
+            color: var(--amber);
+            font-family: 'Courier New', 'MS Gothic', monospace;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* CRT Effects */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgba(0,0,0,0.12) 1px, rgba(0,0,0,0.12) 2px);
+            pointer-events: none;
+            z-index: 10000;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 35%, rgba(10,8,6,0.7) 100%);
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           LAYERED 3D CONTAINER
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            perspective: 1200px;
+            overflow: hidden;
+        }
+        
+        /* Background layer - 3D wireframe grid */
+        .bg-layer {
+            position: absolute;
+            inset: 0;
+            transform: rotateX(60deg) translateY(-50%);
+            transform-origin: center top;
+            opacity: 0.15;
+        }
+        
+        .bg-layer svg {
+            width: 200%;
+            height: 200%;
+            position: absolute;
+            left: -50%;
+            top: 0;
+        }
+        
+        /* Foreground layer */
+        .fg-layer {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           HEADER - Red gradient, amber accents
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .header {
+            background: linear-gradient(180deg, var(--blood) 0%, transparent 100%);
+            border-bottom: 2px solid var(--amber);
+            padding: 8px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+        
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: var(--amber-bright);
+            text-shadow: 0 0 8px var(--amber);
+        }
+        
+        .logo span { color: var(--crimson); }
+        
+        .header-title {
+            font-size: 10px;
+            color: var(--border-bright);
+            letter-spacing: 3px;
+        }
+        
+        .header-right {
+            display: flex;
+            gap: 32px;
+            font-size: 10px;
+        }
+        
+        .header-item { display: flex; gap: 6px; }
+        .header-item .label { color: var(--border-bright); }
+        .header-item .value { color: var(--green); }
+        .header-item .value.cyan { color: var(--cyan); }
+        .header-item .value.red { color: var(--crimson); animation: blink 0.5s infinite; }
+        
+        @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           MAIN AREA - Overlapping 3D displays
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .main {
+            flex: 1;
+            position: relative;
+            display: grid;
+            grid-template-columns: 260px 1fr 260px;
+            gap: 8px;
+            padding: 8px;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           3D DISPLAY COMPONENTS
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .display-3d {
+            position: relative;
+            background: rgba(26, 20, 16, 0.9);
+            border: 1px solid var(--border);
+            transform-style: preserve-3d;
+        }
+        
+        .display-header {
+            background: linear-gradient(90deg, rgba(139,0,0,0.4) 0%, transparent 100%);
+            border-bottom: 1px solid var(--amber);
+            padding: 4px 8px;
+            font-size: 9px;
+            display: flex;
+            justify-content: space-between;
+            letter-spacing: 2px;
+        }
+        
+        .display-title { color: var(--amber-bright); font-weight: bold; }
+        .display-title span { color: var(--border-bright); font-size: 8px; margin-left: 8px; }
+        .display-status { color: var(--green); font-size: 8px; }
+        
+        .display-content {
+            padding: 4px;
+            height: calc(100% - 24px);
+            overflow: hidden;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           3D PSYCHOGRAPH - Layered wave channels with depth
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .psycho-3d {
+            position: relative;
+            height: 100%;
+        }
+        
+        .wave-layer {
+            position: relative;
+            height: 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+        }
+        
+        .wave-label {
+            width: 48px;
+            padding: 2px 4px;
+            border-right: 1px solid var(--border);
+            font-size: 7px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+        }
+        
+        .wave-label .main { color: var(--amber); }
+        .wave-label .sub { color: var(--green); font-size: 6px; }
+        
+        .wave-canvas {
+            flex: 1;
+            position: relative;
+        }
+        
+        .wave-canvas svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           3D HEXAGONAL TARGET - Perspective depth
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .hex-target-3d {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-style: preserve-3d;
+        }
+        
+        .hex-target-3d svg {
+            filter: drop-shadow(0 0 4px var(--amber));
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           3D WIREFRAME TERRAIN - True perspective grid
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .terrain-3d {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        .terrain-3d svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           DENSE STATUS MATRIX
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .status-matrix {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2px;
+        }
+        
+        .status-cell {
+            border-left: 2px solid var(--border);
+            padding: 2px 4px;
+            font-size: 10px;
+        }
+        
+        .status-cell.ok { border-left-color: var(--green); }
+        .status-cell.warn { border-left-color: var(--yellow); }
+        .status-cell.danger { border-left-color: var(--crimson); }
+        
+        .status-cell .label { font-size: 6px; color: var(--border-bright); display: flex; gap: 4px; }
+        .status-cell .label span { color: var(--green); }
+        .status-cell .value { color: var(--amber-bright); font-weight: bold; font-size: 12px; }
+        .status-cell .value.ok { color: var(--green); }
+        .status-cell .value.warn { color: var(--yellow); }
+        .status-cell .value.danger { color: var(--crimson); }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           HEXAGONAL SKILL CLUSTER - 3D honeycomb
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .hex-cluster-3d {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .hex-cluster-3d svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           PATTERN BLUE BAR
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .pattern-bar {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 8px 16px;
+            background: var(--terminal);
+            border: 2px solid var(--cyan);
+            margin-bottom: 4px;
+        }
+        
+        .pattern-dot {
+            width: 16px;
+            height: 16px;
+            background: var(--cyan);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 12px var(--cyan); }
+            50% { opacity: 0.5; box-shadow: 0 0 4px var(--cyan); }
+        }
+        
+        .pattern-text { font-size: 16px; font-weight: bold; letter-spacing: 3px; color: var(--cyan); }
+        .pattern-ja { font-size: 10px; color: var(--cyan); opacity: 0.6; }
+        .pattern-alert { margin-left: auto; font-size: 12px; font-weight: bold; color: var(--crimson); animation: blink 0.5s infinite; }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           SYNC DISPLAY
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .sync-display {
+            text-align: center;
+            padding: 16px 8px;
+        }
+        
+        .sync-value {
+            font-size: 56px;
+            font-weight: bold;
+            color: var(--green);
+            text-shadow: 0 0 8px var(--green), 0 0 16px var(--green);
+            line-height: 1;
+        }
+        
+        .sync-label {
+            font-size: 9px;
+            color: var(--border-bright);
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           MAGI 3D
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .magi-3d {
+            text-align: center;
+            padding: 8px;
+        }
+        
+        .magi-title { font-size: 10px; letter-spacing: 2px; color: var(--amber-bright); margin-bottom: 4px; }
+        .magi-subtitle { font-size: 8px; color: var(--border-bright); margin-bottom: 12px; }
+        
+        .magi-nodes {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .magi-node { display: flex; flex-direction: column; align-items: center; }
+        
+        .magi-circle {
+            width: 32px;
+            height: 32px;
+            border: 2px solid;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .magi-circle::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+        }
+        
+        .magi-node.caspar .magi-circle { border-color: var(--orange); }
+        .magi-node.caspar .magi-circle::before { background: var(--orange); box-shadow: 0 0 10px var(--orange); }
+        .magi-node.melchior .magi-circle { border-color: var(--green); }
+        .magi-node.melchior .magi-circle::before { background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .magi-node.balthasar .magi-circle { border-color: var(--cyan); }
+        .magi-node.balthasar .magi-circle::before { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+        
+        .magi-name { font-size: 7px; color: var(--border-bright); margin-top: 4px; }
+        .magi-name-ja { font-size: 6px; margin-top: 2px; }
+        .magi-node.caspar .magi-name-ja { color: var(--orange); }
+        .magi-node.melchior .magi-name-ja { color: var(--green); }
+        .magi-node.balthasar .magi-name-ja { color: var(--cyan); }
+        
+        .magi-result { font-size: 11px; font-weight: bold; margin-top: 12px; color: var(--green); }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           FOOTER DATA STREAM
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .footer {
+            background: var(--terminal);
+            border-top: 2px solid var(--crimson);
+            padding: 4px 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .data-stream {
+            display: inline-block;
+            font-size: 9px;
+            color: var(--green);
+            animation: scroll 25s linear infinite;
+        }
+        
+        @keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        
+        /* Rotation */
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 3D BACKGROUND LAYER - Perspective wireframe grid -->
+        <div class="bg-layer">
+            <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#FF8C00" stroke-width="0.5" opacity="0.3"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"/>
+                <!-- Perspective lines -->
+                <g stroke="#FF8C00" stroke-width="0.3" opacity="0.4">
+                    <line x1="500" y1="0" x2="0" y2="1000"/>
+                    <line x1="500" y1="0" x2="250" y2="1000"/>
+                    <line x1="500" y1="0" x2="500" y2="1000"/>
+                    <line x1="500" y1="0" x2="750" y2="1000"/>
+                    <line x1="500" y1="0" x2="1000" y2="1000"/>
+                </g>
+            </svg>
+        </div>
+        
+        <!-- FOREGROUND -->
+        <div class="fg-layer">
+            <!-- HEADER -->
+            <header class="header">
+                <div class="header-left">
+                    <div class="logo">NER<span>V</span></div>
+                    <div class="header-title">司令センター // COMMAND CENTER</div>
+                </div>
+                <div class="header-right">
+                    <div class="header-item"><span class="label">SYSTEM:</span><span class="value">NOMINAL</span></div>
+                    <div class="header-item"><span class="label">PATTERN:</span><span class="value cyan">BLUE</span></div>
+                    <div class="header-item"><span class="label">ALERT:</span><span class="value red">ANGEL</span></div>
+                    <div class="header-item"><span class="label">TIME:</span><span class="value" id="clock">00:00:00</span></div>
+                </div>
+            </header>
+            
+            <!-- MAIN -->
+            <main class="main">
+                <!-- LEFT -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <!-- Psychograph -->
+                    <div class="display-3d" style="flex: 2;">
+                        <div class="display-header">
+                            <span><span class="display-title">PSYCHOGRAPH</span><span>心理図</span></span>
+                            <span class="display-status">ACTIVE</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="psycho-3d">
+                                <div class="wave-layer">
+                                    <div class="wave-label"><span class="main">A-10</span><span class="sub">神経</span></div>
+                                    <div class="wave-canvas"><svg viewBox="0 0 200 32" preserveAspectRatio="none"><path fill="none" stroke="#FFAA33" stroke-width="1.5" d="M0,16 Q15,8 30,16 T60,16 T90,16 T120,16 T150,16 T180,16 T200,16"><animate attributeName="d" values="M0,16 Q15,8 30,16 T60,16 T90,16 T120,16 T150,16 T180,16 T200,16;M0,16 Q15,24 30,16 T60,16 T90,14 T120,18 T150,16 T180,16 T200,16;M0,16 Q15,8 30,16 T60,16 T90,16 T120,16 T150,16 T180,16 T200,16" dur="1.5s" repeatCount="indefinite"/></path></svg></div>
+                                </div>
+                                <div class="wave-layer">
+                                    <div class="wave-label"><span class="main">PFC</span><span class="sub">前頭葉</span></div>
+                                    <div class="wave-canvas"><svg viewBox="0 0 200 32" preserveAspectRatio="none"><path fill="none" stroke="#FFAA33" stroke-width="1.5" d="M0,16 L20,16 L25,4 L30,28 L35,16 L60,16 L65,6 L70,26 L75,16 L100,16 L120,16 L140,16 L160,16 L180,16 L200,16"><animate attributeName="d" values="M0,16 L20,16 L25,4 L30,28 L35,16 L60,16 L65,6 L70,26 L75,16 L100,16 L120,16 L140,16 L160,16 L180,16 L200,16;M0,16 L20,18 L25,6 L30,26 L35,14 L60,18 L65,8 L70,24 L75,18 L100,16 L120,14 L140,18 L160,16 L180,16 L200,16;M0,16 L20,16 L25,4 L30,28 L35,16 L60,16 L65,6 L70,26 L75,16 L100,16 L120,16 L140,16 L160,16 L180,16 L200,16" dur="1s" repeatCount="indefinite"/></path></svg></div>
+                                </div>
+                                <div class="wave-layer">
+                                    <div class="wave-label"><span class="main">SYNC</span><span class="sub">同期</span></div>
+                                    <div class="wave-canvas"><svg viewBox="0 0 200 32" preserveAspectRatio="none"><path fill="none" stroke="#FFD700" stroke-width="1.5" d="M0,16 L15,16 L20,2 L25,30 L30,16 L45,16 L50,0 L55,32 L60,16 L80,16 L85,4 L90,28 L95,16 L110,16 L130,16 L150,16 L170,16 L200,16"><animate attributeName="d" values="M0,16 L15,16 L20,2 L25,30 L30,16 L45,16 L50,0 L55,32 L60,16 L80,16 L85,4 L90,28 L95,16 L110,16 L130,16 L150,16 L170,16 L200,16;M0,16 L15,18 L20,4 L25,28 L30,12 L45,18 L50,2 L55,30 L60,12 L80,18 L85,6 L90,26 L95,18 L110,14 L130,18 L150,14 L170,16 L200,16;M0,16 L15,14 L20,0 L25,32 L30,20 L45,12 L50,-2 L55,34 L60,20 L80,12 L85,2 L90,30 L95,12 L110,18 L130,12 L150,18 L170,16 L200,16" dur="0.3s" repeatCount="indefinite"/></path></svg></div>
+                                </div>
+                                <div class="wave-layer">
+                                    <div class="wave-label"><span class="main">EMOT</span><span class="sub">感情</span></div>
+                                    <div class="wave-canvas"><svg viewBox="0 0 200 32" preserveAspectRatio="none"><path fill="none" stroke="#FFAA33" stroke-width="1.5" d="M0,16 Q25,10 50,16 T100,16 T150,16 T200,16"><animate attributeName="d" values="M0,16 Q25,10 50,16 T100,16 T150,16 T200,16;M0,16 Q25,22 50,16 T100,16 T150,14 T200,18;M0,16 Q25,10 50,16 T100,16 T150,16 T200,16" dur="2s" repeatCount="indefinite"/></path></svg></div>
+                                </div>
+                                <div class="wave-layer">
+                                    <div class="wave-label"><span class="main">HIPP</span><span class="sub">海馬</span></div>
+                                    <div class="wave-canvas"><svg viewBox="0 0 200 32" preserveAspectRatio="none"><path fill="none" stroke="#39FF14" stroke-width="1.5" d="M0,16 L25,16 L30,6 L35,26 L40,16 L65,16 L70,8 L75,24 L80,16 L105,16 L110,10 L115,22 L120,16 L145,16 L150,14 L155,18 L160,16 L200,16"><animate attributeName="d" values="M0,16 L25,16 L30,6 L35,26 L40,16 L65,16 L70,8 L75,24 L80,16 L105,16 L110,10 L115,22 L120,16 L145,16 L150,14 L155,18 L160,16 L200,16;M0,16 L25,18 L30,8 L35,24 L40,18 L65,14 L70,10 L75,22 L80,18 L105,14 L110,12 L115,20 L120,14 L145,18 L150,16 L155,20 L160,18 L200,16;M0,16 L25,16 L30,6 L35,26 L40,16 L65,16 L70,8 L75,24 L80,16 L105,16 L110,10 L115,22 L120,16 L145,16 L150,14 L155,18 L160,16 L200,16" dur="0.6s" repeatCount="indefinite"/></path></svg></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sync -->
+                    <div class="display-3d" style="flex: 0.8;">
+                        <div class="display-header">
+                            <span><span class="display-title">SYNC RATIO</span><span>同期率</span></span>
+                            <span class="display-status">94.2%</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="sync-display">
+                                <div class="sync-value">94.2<span style="font-size:20px">%</span></div>
+                                <div class="sync-label">SYNC RATIO // 同期率</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Pilot Status -->
+                    <div class="display-3d" style="flex: 1.2;">
+                        <div class="display-header">
+                            <span><span class="display-title">PILOT</span><span>パイロット</span></span>
+                            <span class="display-status">ACTIVE</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="status-matrix">
+                                <div class="status-cell ok"><div class="label">NAME <span>氏名</span></div><div class="value">IKARI</div></div>
+                                <div class="status-cell ok"><div class="label">UNIT <span>機体</span></div><div class="value">01</div></div>
+                                <div class="status-cell warn"><div class="label">PULSE <span>脈拍</span></div><div class="value warn">118</div></div>
+                                <div class="status-cell ok"><div class="label">BP <span>血圧</span></div><div class="value">125/82</div></div>
+                                <div class="status-cell warn"><div class="label">POWER <span>電源</span></div><div class="value warn">3:47</div></div>
+                                <div class="status-cell ok"><div class="label">AT FLD <span>A.T.場</span></div><div class="value ok">STABLE</div></div>
+                                <div class="status-cell ok"><div class="label">LCL-T <span>温度</span></div><div class="value">28.4°</div></div>
+                                <div class="status-cell ok"><div class="label">O2 <span>酸素</span></div><div class="value">21.4%</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- CENTER -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div class="pattern-bar">
+                        <div class="pattern-dot"></div>
+                        <div>
+                            <div class="pattern-text">PATTERN: BLUE</div>
+                            <div class="pattern-ja">パターン青</div>
+                        </div>
+                        <div class="pattern-alert">▲ ANGEL DETECTED ▲</div>
+                    </div>
+                    
+                    <!-- 3D Wireframe Terrain Map -->
+                    <div class="display-3d" style="flex: 1;">
+                        <div class="display-header">
+                            <span><span class="display-title">TACTICAL MAP</span><span>戦術地図</span></span>
+                            <span class="display-status">TRACKING</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="terrain-3d">
+                                <svg viewBox="0 0 300 180" preserveAspectRatio="xMidYMid slice">
+                                    <!-- 3D Perspective grid -->
+                                    <g stroke="#3A2A1A" stroke-width="0.4" opacity="0.6">
+                                        <!-- Horizontal lines with perspective -->
+                                        <line x1="50" y1="10" x2="250" y2="10" stroke="#4A3A2A"/>
+                                        <line x1="35" y1="40" x2="265" y2="40" stroke="#3A2A1A"/>
+                                        <line x1="20" y1="80" x2="280" y2="80"/>
+                                        <line x1="5" y1="130" x2="295" y2="130"/>
+                                        <line x1="0" y1="180" x2="300" y2="180"/>
+                                        <!-- Vertical lines to vanishing point -->
+                                        <line x1="150" y1="0" x2="10" y2="180"/>
+                                        <line x1="150" y1="0" x2="60" y2="180"/>
+                                        <line x1="150" y1="0" x2="110" y2="180"/>
+                                        <line x1="150" y1="0" x2="150" y2="180"/>
+                                        <line x1="150" y1="0" x2="190" y2="180"/>
+                                        <line x1="150" y1="0" x2="240" y2="180"/>
+                                        <line x1="150" y1="0" x2="290" y2="180"/>
+                                    </g>
+                                    
+                                    <!-- Terrain contour with 3D feel -->
+                                    <g fill="none" stroke="#39FF14" stroke-width="0.6" opacity="0.25">
+                                        <path d="M 20 50 Q 70 45 120 55 T 220 50 T 280 55"/>
+                                        <path d="M 10 90 Q 60 80 110 95 T 210 85 T 290 95"/>
+                                        <path d="M 5 130 Q 55 120 105 135 T 205 125 T 295 135"/>
+                                    </g>
+                                    
+                                    <!-- EVA-01 marker -->
+                                    <g>
+                                        <circle cx="200" cy="90" r="5" fill="#39FF14"/>
+                                        <circle cx="200" cy="90" r="10" fill="none" stroke="#39FF14" stroke-width="0.5" opacity="0.5"/>
+                                        <text x="210" y="94" fill="#39FF14" font-size="7" font-family="Courier New">EVA-01</text>
+                                    </g>
+                                    
+                                    <!-- Target marker with pulse -->
+                                    <g>
+                                        <circle cx="80" cy="45" r="6" fill="#DC143C">
+                                            <animate attributeName="r" values="6;9;6" dur="0.5s" repeatCount="indefinite"/>
+                                        </circle>
+                                        <circle cx="80" cy="45" r="12" fill="none" stroke="#DC143C" stroke-width="1">
+                                            <animate attributeName="r" values="12;20;12" dur="0.5s" repeatCount="indefinite"/>
+                                            <animate attributeName="opacity" values="0.8;0;0.8" dur="0.5s" repeatCount="indefinite"/>
+                                        </circle>
+                                        <text x="90" y="49" fill="#DC143C" font-size="7" font-family="Courier New">TGT</text>
+                                    </g>
+                                    
+                                    <!-- Map info -->
+                                    <text x="10" y="175" fill="#3A2A1A" font-size="6" font-family="Courier New">TOKYO-3 | GRID: 47-K | 1:50K</text>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 3D Hexagonal Skill Graph -->
+                    <div class="display-3d" style="flex: 1.2;">
+                        <div class="display-header">
+                            <span><span class="display-title">SKILL GRAPH</span><span>スキルグラフ</span></span>
+                            <span class="display-status">N:12 L:18 C:94%</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="hex-cluster-3d">
+                                <svg viewBox="0 0 280 140" preserveAspectRatio="xMidYMid slice">
+                                    <defs>
+                                        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                                            <feGaussianBlur stdDeviation="1" result="blur"/>
+                                            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                        </filter>
+                                    </defs>
+                                    
+                                    <!-- Connection lines -->
+                                    <g stroke="#3A2A1A" stroke-width="0.5" fill="none">
+                                        <line x1="60" y1="28" x2="100" y2="28"/>
+                                        <line x1="100" y1="28" x2="140" y2="48"/>
+                                        <line x1="140" y1="48" x2="180" y2="68"/>
+                                        <line x1="60" y1="68" x2="100" y2="48"/>
+                                        <line x1="100" y1="48" x2="140" y2="48"/>
+                                        <line x1="140" y1="48" x2="180" y2="28"/>
+                                        <line x1="60" y1="108" x2="100" y2="88"/>
+                                        <line x1="100" y1="88" x2="140" y2="108"/>
+                                    </g>
+                                    
+                                    <!-- Active chain lines -->
+                                    <g stroke="#39FF14" stroke-width="0.5" fill="none" opacity="0.4" filter="url(#glow)">
+                                        <line x1="60" y1="28" x2="100" y2="28"/>
+                                        <line x1="100" y1="28" x2="140" y2="48"/>
+                                        <line x1="140" y1="48" x2="180" y2="68"/>
+                                    </g>
+                                    
+                                    <!-- Hex nodes -->
+                                    <!-- Row 1 -->
+                                    <g filter="url(#glow)">
+                                        <polygon points="60,14 72,21 72,35 60,42 48,35 48,21" fill="rgba(57,255,20,0.1)" stroke="#39FF14" stroke-width="1"/>
+                                        <text x="60" y="30" text-anchor="middle" fill="#FFAA33" font-size="6" font-family="Courier New">WEB</text>
+                                    </g>
+                                    <g filter="url(#glow)">
+                                        <polygon points="100,14 112,21 112,35 100,42 88,35 88,21" fill="rgba(57,255,20,0.1)" stroke="#39FF14" stroke-width="1"/>
+                                        <text x="100" y="30" text-anchor="middle" fill="#FFAA33" font-size="6" font-family="Courier New">ANLYZ</text>
+                                    </g>
+                                    <polygon points="140,14 152,21 152,35 140,42 128,35 128,21" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="140" y="30" text-anchor="middle" fill="#4A3A2A" font-size="6" font-family="Courier New">LLM</text>
+                                    <polygon points="180,14 192,21 192,35 180,42 168,35 168,21" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="180" y="30" text-anchor="middle" fill="#4A3A2A" font-size="5" font-family="Courier New">EMBED</text>
+                                    <polygon points="220,14 232,21 232,35 220,42 208,35 208,21" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="220" y="30" text-anchor="middle" fill="#4A3A2A" font-size="5" font-family="Courier New">FILE</text>
+                                    
+                                    <!-- Row 2 (offset) -->
+                                    <polygon points="80,42 92,49 92,63 80,70 68,63 68,49" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="80" y="58" text-anchor="middle" fill="#4A3A2A" font-size="5" font-family="Courier New">EMB</text>
+                                    <g filter="url(#glow)">
+                                        <polygon points="120,42 132,49 132,63 120,70 108,63 108,49" fill="rgba(57,255,20,0.1)" stroke="#39FF14" stroke-width="1"/>
+                                        <text x="120" y="58" text-anchor="middle" fill="#FFAA33" font-size="5" font-family="Courier New">DERIVE</text>
+                                    </g>
+                                    <g filter="url(#glow)">
+                                        <polygon points="160,42 172,49 172,63 160,70 148,63 148,49" fill="rgba(57,255,20,0.15)" stroke="#39FF14" stroke-width="1.5"/>
+                                        <text x="160" y="58" text-anchor="middle" fill="#FFAA33" font-size="6" font-weight="bold" font-family="Courier New">CODE</text>
+                                    </g>
+                                    <polygon points="200,42 212,49 212,63 200,70 188,63 188,49" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="200" y="58" text-anchor="middle" fill="#4A3A2A" font-size="5" font-family="Courier New">TEST</text>
+                                    
+                                    <!-- Row 3 -->
+                                    <g filter="url(#glow)">
+                                        <polygon points="60,70 72,77 72,91 60,98 48,91 48,77" fill="rgba(57,255,20,0.1)" stroke="#39FF14" stroke-width="1"/>
+                                        <text x="60" y="86" text-anchor="middle" fill="#FFAA33" font-size="5" font-family="Courier New">TERM</text>
+                                    </g>
+                                    <polygon points="100,70 112,77 112,91 100,98 88,91 88,77" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="100" y="86" text-anchor="middle" fill="#4A3A2A" font-size="5" font-family="Courier New">VISION</text>
+                                    <polygon points="140,70 152,77 152,91 140,98 128,91 128,77" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="140" y="86" text-anchor="middle" fill="#4A3A2A" font-size="5" font-family="Courier New">HOOK</text>
+                                    <g filter="url(#glow)">
+                                        <polygon points="180,70 192,77 192,91 180,98 168,91 168,77" fill="rgba(57,255,20,0.1)" stroke="#39FF14" stroke-width="1"/>
+                                        <text x="180" y="86" text-anchor="middle" fill="#FFAA33" font-size="5" font-family="Courier New">WRITE</text>
+                                    </g>
+                                    
+                                    <!-- Row 4 -->
+                                    <polygon points="80,98 92,105 92,119 80,126 68,119 68,105" fill="rgba(26,20,16,0.9)" stroke="#3A2A1A" stroke-width="1"/>
+                                    <text x="80" y="114" text-anchor="middle" fill="#4A3A2A" font-size="5" font-family="Courier New">AUTH</text>
+                                    <g>
+                                        <polygon points="120,98 132,105 132,119 120,126 108,119 108,105" fill="rgba(220,20,60,0.1)" stroke="#DC143C" stroke-width="1"/>
+                                        <text x="120" y="114" text-anchor="middle" fill="#DC143C" font-size="5" font-family="Courier New">CLAIM</text>
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- RIGHT -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <!-- 3D Hex Target -->
+                    <div class="display-3d" style="flex: 1.2;">
+                        <div class="display-header">
+                            <span><span class="display-title">TARGET</span><span>目標</span></span>
+                            <span class="display-status">LOCKED</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="hex-target-3d">
+                                <svg viewBox="0 0 140 120">
+                                    <polygon points="70,5 120,30 120,90 70,115 20,90 20,30" fill="none" stroke="#FFAA33" stroke-width="2" filter="url(#glow)"/>
+                                    <g style="transform-origin: 70px 60px; animation: rotate 6s linear infinite;">
+                                        <polygon points="70,20 100,37 100,83 70,100 40,83 40,37" fill="none" stroke="#39FF14" stroke-width="1" stroke-dasharray="4,2"/>
+                                    </g>
+                                    <line x1="58" y1="60" x2="82" y2="60" stroke="#39FF14" stroke-width="1.5"/>
+                                    <line x1="70" y1="48" x2="70" y2="72" stroke="#39FF14" stroke-width="1.5"/>
+                                    <circle cx="70" cy="60" r="3" fill="#39FF14"/>
+                                    <path d="M20,35 L20,30 L26,30" fill="none" stroke="#FFAA33" stroke-width="1.5"/>
+                                    <path d="M114,30 L120,30 L120,35" fill="none" stroke="#FFAA33" stroke-width="1.5"/>
+                                    <path d="M20,85 L20,90 L26,90" fill="none" stroke="#FFAA33" stroke-width="1.5"/>
+                                    <path d="M114,90 L120,90 L120,85" fill="none" stroke="#FFAA33" stroke-width="1.5"/>
+                                </svg>
+                                <div style="text-align: center; margin-top: 4px;">
+                                    <div style="font-size: 12px; font-weight: bold; color: #FFAA33; letter-spacing: 2px;">ANGEL-04</div>
+                                    <div style="font-size: 8px; color: #3A2A1A;">D: 2,847m | B: 047°</div>
+                                    <div style="font-size: 9px; color: #39FF14; font-weight: bold;">TRACKING // 追跡中</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- MAGI -->
+                    <div class="display-3d" style="flex: 0.9;">
+                        <div class="display-header">
+                            <span><span class="display-title">MAGI</span><span> Magi</span></span>
+                            <span class="display-status">ONLINE</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="magi-3d">
+                                <div class="magi-title">MAGI DECISION</div>
+                                <div class="magi-subtitle">三種の決定</div>
+                                <div class="magi-nodes">
+                                    <div class="magi-node caspar">
+                                        <div class="magi-circle"></div>
+                                        <span class="magi-name">CASPAR</span>
+                                        <span class="magi-name-ja">論理</span>
+                                    </div>
+                                    <div class="magi-node melchior">
+                                        <div class="magi-circle"></div>
+                                        <span class="magi-name">MELCHIOR</span>
+                                        <span class="magi-name-ja">科学</span>
+                                    </div>
+                                    <div class="magi-node balthasar">
+                                        <div class="magi-circle"></div>
+                                        <span class="magi-name">BALTHASAR</span>
+                                        <span class="magi-name-ja">感情</span>
+                                    </div>
+                                </div>
+                                <div class="magi-result">承認 // APPROVED</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Unit Status -->
+                    <div class="display-3d" style="flex: 1;">
+                        <div class="display-header">
+                            <span><span class="display-title">UNIT</span><span>機体</span></span>
+                            <span class="display-status">ACTIVE</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="status-matrix">
+                                <div class="status-cell ok"><div class="label">UNIT <span>機体</span></div><div class="value ok">EVA-01</div></div>
+                                <div class="status-cell ok"><div class="label">TYPE <span>型式</span></div><div class="value">TEST</div></div>
+                                <div class="status-cell ok"><div class="label">CORE <span>中核</span></div><div class="value ok">OK</div></div>
+                                <div class="status-cell warn"><div class="label">BATT <span>電池</span></div><div class="value warn">47%</div></div>
+                                <div class="status-cell ok"><div class="label">ARMOR <span>装甲</span></div><div class="value">92%</div></div>
+                                <div class="status-cell ok"><div class="label">NERVE <span>神経</span></div><div class="value ok">LINK</div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Resources -->
+                    <div class="display-3d" style="flex: 1;">
+                        <div class="display-header">
+                            <span><span class="display-title">RESOURCES</span><span>資源</span></span>
+                            <span class="display-status" style="color: #FFD700;">WARN</span>
+                        </div>
+                        <div class="display-content">
+                            <div class="status-matrix">
+                                <div class="status-cell warn"><div class="label">POWER <span>電源</span></div><div class="value warn">3:47</div></div>
+                                <div class="status-cell ok"><div class="label">LCL-T <span>温度</span></div><div class="value">28.4°</div></div>
+                                <div class="status-cell ok"><div class="label">O2 <span>酸素</span></div><div class="value">21.4%</div></div>
+                                <div class="status-cell ok"><div class="label">PRESS <span>気圧</span></div><div class="value">0.87</div></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            
+            <!-- FOOTER -->
+            <footer class="footer">
+                <div class="data-stream">
+                    SYNC:94.2% | PATTERN:BLUE | TARGET:LOCK | D:2847m | B:047° | BATT:47% | O2:21.4% | AT:STABLE | PILOT:IKARI | UNIT:01 | ANGEL:04 | MAGI:OK | CONF:94% | CHAIN:ACTIVE | SKILLS:12 | LINKS:18 | SYNC:94.2% | PATTERN:BLUE | TARGET:LOCK | D:2847m | B:047° | BATT:47% | O2:21.4% | AT:STABLE | PILOT:IKARI | UNIT:01 | ANGEL:04 | MAGI:OK | CONF:94% | CHAIN:ACTIVE | SKILLS:12 | LINKS:18 |
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                String(now.getHours()).padStart(2,'0') + ':' +
+                String(now.getMinutes()).padStart(2,'0') + ':' +
+                String(now.getSeconds()).padStart(2,'0');
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

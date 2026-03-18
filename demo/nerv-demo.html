@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NERV // COMMAND CENTER</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           NERV AUTHENTIC STYLES - No generic sci-fi, authentic Eva aesthetic
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        :root {
+            --nerv-amber: #FF8C00;
+            --nerv-amber-bright: #FFAA33;
+            --nerv-phosphor-green: #39FF14;
+            --nerv-phosphor-cyan: #00CED1;
+            --nerv-crimson: #DC143C;
+            --nerv-crimson-dark: #8B0000;
+            --nerv-terminal-black: #050505;
+            --nerv-panel-dark: #0F0F0F;
+            --nerv-border-mid: #2A2A2A;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--nerv-terminal-black);
+            color: var(--nerv-amber);
+            font-family: 'Courier New', 'MS Gothic', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* CRT Scanlines - subtle, not overwhelming */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(0, 0, 0, 0.03) 2px,
+                rgba(0, 0, 0, 0.03) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* CRT Vignette */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 60%, rgba(0, 0, 0, 0.4) 100%);
+            pointer-events: none;
+            z-index: 9998;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           HEADER - Crimson bar, amber title, Japanese subtitle
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .header {
+            background: linear-gradient(180deg, var(--nerv-crimson-dark) 0%, transparent 100%);
+            border-bottom: 2px solid var(--nerv-amber);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header-title h1 {
+            color: var(--nerv-amber);
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            text-shadow: 0 0 8px var(--nerv-amber);
+        }
+        
+        .header-title .ja {
+            color: var(--nerv-phosphor-green);
+            font-size: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .header-status {
+            display: flex;
+            gap: 20px;
+            font-size: 10px;
+        }
+        
+        .header-status .label {
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .header-status .value {
+            color: var(--nerv-phosphor-green);
+            text-shadow: 0 0 4px var(--nerv-phosphor-green);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           MAIN LAYOUT - Dense, military information density
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .main {
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            gap: 16px;
+            padding: 16px;
+            min-height: calc(100vh - 120px);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           PANELS - Chamfered corners, no border-radius
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .panel {
+            background: var(--nerv-panel-dark);
+            border: 1px solid var(--nerv-border-mid);
+            /* Chamfered corners using polygon clip-path */
+            clip-path: polygon(
+                8px 0%,
+                calc(100% - 8px) 0%,
+                100% 8px,
+                100% calc(100% - 8px),
+                calc(100% - 8px) 100%,
+                8px 100%,
+                0% calc(100% - 8px),
+                0% 8px
+            );
+        }
+        
+        .panel-header {
+            background: var(--nerv-crimson-dark);
+            padding: 6px 12px;
+            border-bottom: 1px solid var(--nerv-amber);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-title {
+            color: var(--nerv-amber);
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .panel-title-ja {
+            color: var(--nerv-phosphor-green);
+            font-size: 9px;
+        }
+        
+        .panel-content {
+            padding: 12px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           SYNC RATIO GAUGE
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .sync-gauge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .sync-value {
+            font-size: 42px;
+            font-weight: bold;
+            color: var(--nerv-phosphor-green);
+            text-shadow: 0 0 8px var(--nerv-phosphor-green), 0 0 16px var(--nerv-phosphor-green);
+        }
+        
+        .sync-label {
+            font-size: 10px;
+            color: #666;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 8px;
+        }
+        
+        .sync-label-ja {
+            font-size: 9px;
+            color: var(--nerv-phosphor-green);
+        }
+        
+        .sync-bar {
+            width: 100%;
+            height: 8px;
+            background: #1A1A1A;
+            margin-top: 16px;
+            display: flex;
+            gap: 2px;
+        }
+        
+        .sync-segment {
+            flex: 1;
+            background: var(--nerv-phosphor-green);
+            box-shadow: 0 0 4px var(--nerv-phosphor-green);
+        }
+        
+        .sync-segment.warning {
+            background: var(--nerv-amber);
+            box-shadow: 0 0 4px var(--nerv-amber);
+        }
+        
+        .sync-segment.danger {
+            background: var(--nerv-crimson);
+            box-shadow: 0 0 4px var(--nerv-crimson);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           STATUS GRID - Dense data readouts
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .status-label {
+            font-size: 9px;
+            color: #666;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        
+        .status-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--nerv-phosphor-green);
+            text-shadow: 0 0 4px var(--nerv-phosphor-green);
+        }
+        
+        .status-value.warning {
+            color: var(--nerv-amber);
+            text-shadow: 0 0 4px var(--nerv-amber);
+        }
+        
+        .status-value.danger {
+            color: var(--nerv-crimson);
+            text-shadow: 0 0 4px var(--nerv-crimson);
+        }
+        
+        .status-unit {
+            font-size: 10px;
+            color: #666;
+            margin-left: 4px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           MAGI DECISION SYSTEM
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .magi-container {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .magi-title {
+            color: var(--nerv-amber);
+            font-size: 12px;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+        
+        .magi-title-ja {
+            color: #666;
+            font-size: 10px;
+            margin-bottom: 16px;
+        }
+        
+        .magi-nodes {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 20px 0;
+        }
+        
+        .magi-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .magi-circle {
+            width: 50px;
+            height: 50px;
+            border: 2px solid;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .magi-circle::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border-radius: 50%;
+        }
+        
+        .magi-node.caspar .magi-circle { border-color: var(--nerv-amber); }
+        .magi-node.caspar .magi-circle::before { background: var(--nerv-amber); box-shadow: 0 0 12px var(--nerv-amber); }
+        
+        .magi-node.melchior .magi-circle { border-color: var(--nerv-phosphor-green); }
+        .magi-node.melchior .magi-circle::before { background: var(--nerv-phosphor-green); box-shadow: 0 0 12px var(--nerv-phosphor-green); }
+        
+        .magi-node.balthasar .magi-circle { border-color: var(--nerv-phosphor-cyan); }
+        .magi-node.balthasar .magi-circle::before { background: var(--nerv-phosphor-cyan); box-shadow: 0 0 12px var(--nerv-phosphor-cyan); }
+        
+        .magi-name {
+            font-size: 10px;
+            color: #666;
+            margin-top: 8px;
+            text-transform: uppercase;
+        }
+        
+        .magi-name-ja {
+            font-size: 8px;
+            margin-top: 2px;
+        }
+        
+        .magi-status {
+            font-size: 9px;
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        
+        .magi-node.caspar .magi-name-ja { color: var(--nerv-amber); }
+        .magi-node.melchior .magi-name-ja { color: var(--nerv-phosphor-green); }
+        .magi-node.balthasar .magi-name-ja { color: var(--nerv-phosphor-cyan); }
+        
+        .magi-result {
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 16px;
+            color: var(--nerv-phosphor-green);
+            text-shadow: 0 0 8px var(--nerv-phosphor-green);
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           DATA STREAM TICKER
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .data-stream {
+            background: var(--nerv-terminal-black);
+            border-top: 1px solid var(--nerv-border-mid);
+            border-bottom: 1px solid var(--nerv-border-mid);
+            padding: 4px 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .data-stream-content {
+            display: inline-block;
+            color: var(--nerv-phosphor-green);
+            font-size: 9px;
+            text-shadow: 0 0 4px var(--nerv-phosphor-green);
+            animation: scroll 30s linear infinite;
+        }
+        
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           CENTER DISPLAY - Main visualization area
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .center-display {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .center-top {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           FOOTER
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-title">
+            <h1>NERV // COMMAND CENTER</h1>
+            <span class="ja">司令センター</span>
+        </div>
+        <div class="header-status">
+            <div>
+                <span class="label">SYSTEM:</span>
+                <span class="value">NOMINAL</span>
+            </div>
+            <div>
+                <span class="label">PATTERN:</span>
+                <span class="value" style="color: var(--nerv-phosphor-cyan); text-shadow: 0 0 4px var(--nerv-phosphor-cyan);">BLUE</span>
+            </div>
+            <div>
+                <span class="label">TIME:</span>
+                <span class="value" id="clock">00:00:00</span>
+            </div>
+        </div>
+    </header>
+    
+    <main class="main">
+        <!-- LEFT COLUMN -->
+        <div class="left-column">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Sync Ratio</span>
+                    <span class="panel-title-ja">同期率</span>
+                </div>
+                <div class="panel-content">
+                    <div class="sync-gauge">
+                        <div class="sync-value">94.2%</div>
+                        <div class="sync-label">Sync Ratio <span class="sync-label-ja">同期率</span></div>
+                        <div class="sync-bar">
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment"></div>
+                            <div class="sync-segment warning"></div>
+                            <div class="sync-segment warning"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel" style="margin-top: 16px;">
+                <div class="panel-header">
+                    <span class="panel-title">Unit Status</span>
+                    <span class="panel-title-ja">状況</span>
+                </div>
+                <div class="panel-content">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">Internal <span style="color: var(--nerv-phosphor-green); font-size: 8px;">深度</span></span>
+                            <span class="status-value">847<span class="status-unit">m</span></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Temperature <span style="color: var(--nerv-phosphor-green); font-size: 8px;">温度</span></span>
+                            <span class="status-value">28.4<span class="status-unit">°C</span></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Pressure <span style="color: var(--nerv-phosphor-green); font-size: 8px;">気圧</span></span>
+                            <span class="status-value">ATM</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Oxygen <span style="color: var(--nerv-phosphor-green); font-size: 8px;">酸素</span></span>
+                            <span class="status-value warning">18.2<span class="status-unit">%</span></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Pilot <span style="color: var(--nerv-phosphor-green); font-size: 8px;">パイロット</span></span>
+                            <span class="status-value">ACTIVE</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">AT Field <span style="color: var(--nerv-phosphor-green); font-size: 8px;">A.T.場</span></span>
+                            <span class="status-value">STABLE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CENTER COLUMN -->
+        <div class="center-display">
+            <div class="center-top">
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">MAGI Decision</span>
+                        <span class="panel-title-ja">三種の決定</span>
+                    </div>
+                    <div class="magi-container">
+                        <div class="magi-title">MAGI DECISION SYSTEM</div>
+                        <div class="magi-title-ja">三種の決定</div>
+                        <div class="magi-nodes">
+                            <div class="magi-node caspar">
+                                <div class="magi-circle"></div>
+                                <div class="magi-name">CASPAR</div>
+                                <div class="magi-name-ja">論理</div>
+                                <div class="magi-status" style="color: var(--nerv-phosphor-green);">ACCEPT</div>
+                            </div>
+                            <div class="magi-node melchior">
+                                <div class="magi-circle"></div>
+                                <div class="magi-name">MELCHIOR</div>
+                                <div class="magi-name-ja">科学</div>
+                                <div class="magi-status" style="color: var(--nerv-phosphor-green);">ACCEPT</div>
+                            </div>
+                            <div class="magi-node balthasar">
+                                <div class="magi-circle" style="opacity: 0.4;"></div>
+                                <div class="magi-name">BALTHASAR</div>
+                                <div class="magi-name-ja">感情</div>
+                                <div class="magi-status" style="color: var(--nerv-amber);">PENDING</div>
+                            </div>
+                        </div>
+                        <div class="magi-result">AWAITING DECISION / 決定待ち</div>
+                    </div>
+                </div>
+                
+                <div class="panel">
+                    <div class="panel-header">
+                        <span class="panel-title">Target Analysis</span>
+                        <span class="panel-title-ja">目標分析</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <span class="status-label">Target ID</span>
+                                <span class="status-value">ANGEL-04</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Classification</span>
+                                <span class="status-value danger">UNKNOWN</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Distance</span>
+                                <span class="status-value warning">2.4<span class="status-unit">km</span></span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Bearing</span>
+                                <span class="status-value">127°</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Core Status</span>
+                                <span class="status-value danger">ACTIVE</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Threat Level</span>
+                                <span class="status-value danger">CRITICAL</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel" style="flex: 1;">
+                <div class="panel-header">
+                    <span class="panel-title">System Monitor</span>
+                    <span class="panel-title-ja">システム監視</span>
+                </div>
+                <div class="panel-content">
+                    <div class="status-grid" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="status-item">
+                            <span class="status-label">CPU</span>
+                            <span class="status-value">78<span class="status-unit">%</span></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Memory</span>
+                            <span class="status-value">45<span class="status-unit">%</span></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Network</span>
+                            <span class="status-value">OK</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Power</span>
+                            <span class="status-value warning">92<span class="status-unit">%</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RIGHT COLUMN -->
+        <div class="right-column">
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Equipment</span>
+                    <span class="panel-title-ja">装備</span>
+                </div>
+                <div class="panel-content">
+                    <div class="status-grid">
+                        <div class="status-item">
+                            <span class="status-label">Progressive Knife</span>
+                            <span class="status-value" style="color: var(--nerv-phosphor-green);">READY</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Palette Rifle</span>
+                            <span class="status-value" style="color: var(--nerv-amber);">STANDBY</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Umbilical</span>
+                            <span class="status-value" style="color: var(--nerv-phosphor-green);">CONNECTED</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Internal Battery</span>
+                            <span class="status-value">5:00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel" style="margin-top: 16px;">
+                <div class="panel-header">
+                    <span class="panel-title">Alert Log</span>
+                    <span class="panel-title-ja">警報記録</span>
+                </div>
+                <div class="panel-content" style="font-size: 9px; line-height: 1.6;">
+                    <div style="color: var(--nerv-phosphor-green);">[12:34:56] SYSTEM ONLINE</div>
+                    <div style="color: var(--nerv-amber);">[12:35:02] PATTERN BLUE DETECTED</div>
+                    <div style="color: var(--nerv-crimson);">[12:35:08] THREAT LEVEL: CRITICAL</div>
+                    <div style="color: var(--nerv-phosphor-green);">[12:35:15] EVA-01 LAUNCH</div>
+                    <div style="color: var(--nerv-amber);">[12:36:42] OXYGEN LEVEL WARNING</div>
+                    <div style="color: #666;">[12:37:00] AWAITING MAGI...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="data-stream">
+            <div class="data-stream-content">
+                SYS.NOMINAL │ PWR.98.2% │ SYNC.94.1% │ TEMP.28.4°C │ DEPTH.847M │ AT.FIELD.STABLE │ PATTERN.BLUE │ TARGET.ACQUIRED │ ANGEL-04.APPROACHING │ DIST.2.4KM │ BEARING.127° │ SYS.NOMINAL │ PWR.98.2% │ SYNC.94.1% │ TEMP.28.4°C │ DEPTH.847M │ AT.FIELD.STABLE │ PATTERN.BLUE │ TARGET.ACQUIRED │ ANGEL-04.APPROACHING │ DIST.2.4KM │ BEARING.127° │ 
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const time = now.toTimeString().split(' ')[0];
+            document.getElementById('clock').textContent = time;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+    </script>
+</body>
+</html>

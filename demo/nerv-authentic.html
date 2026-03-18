@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NERV // 司令センター</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           NERV AUTHENTIC DESIGN SYSTEM
+           TRUE Eva colors: BLACK / WHITE / RED / GREEN accents
+           NOT dusty amber - sharp, high contrast, industrial
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        :root {
+            /* TRUE Eva palette - no dusty amber */
+            --nerv-red: #FF0000;
+            --nerv-crimson: #DC143C;
+            --nerv-crimson-dark: #8B0000;
+            --nerv-blood: #660000;
+            
+            --nerv-white: #FFFFFF;
+            --nerv-off-white: #E8E8E8;
+            --nerv-text: #CCCCCC;
+            --nerv-text-dim: #666666;
+            
+            --nerv-black: #000000;
+            --nerv-panel: #0A0A0A;
+            --nerv-border: #1A1A1A;
+            
+            /* Accent colors */
+            --nerv-green: #00FF41;
+            --nerv-cyan: #00FFFF;
+            --nerv-yellow: #FFFF00;
+            --nerv-orange: #FF6600;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--nerv-black);
+            color: var(--nerv-white);
+            font-family: 'Courier New', 'MS Gothic', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* CRT Effects */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(0, 0, 0, 0.1) 2px,
+                rgba(0, 0, 0, 0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+            pointer-events: none;
+            z-index: 9998;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           HEADER - RED bar, white text
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .header {
+            background: linear-gradient(180deg, var(--nerv-crimson-dark) 0%, var(--nerv-black) 100%);
+            border-bottom: 3px solid var(--nerv-red);
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: var(--nerv-white);
+        }
+        
+        .header-title span {
+            color: var(--nerv-red);
+        }
+        
+        .header-subtitle {
+            font-size: 10px;
+            color: var(--nerv-text-dim);
+            letter-spacing: 4px;
+        }
+        
+        .header-status {
+            display: flex;
+            gap: 30px;
+            font-size: 11px;
+        }
+        
+        .header-status .label {
+            color: var(--nerv-text-dim);
+        }
+        
+        .header-status .value {
+            color: var(--nerv-green);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           LAYOUT
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .main {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 0;
+            min-height: calc(100vh - 60px);
+        }
+        
+        .column {
+            border-right: 1px solid var(--nerv-border);
+        }
+        
+        .column:last-child {
+            border-right: none;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           PANELS - White borders, red accents
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .panel {
+            border: 1px solid var(--nerv-border);
+            border-top: none;
+            background: var(--nerv-panel);
+            margin-bottom: 0;
+        }
+        
+        .panel-header {
+            background: var(--nerv-crimson-dark);
+            padding: 4px 12px;
+            border-bottom: 2px solid var(--nerv-red);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .panel-title {
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: var(--nerv-white);
+        }
+        
+        .panel-title-ja {
+            font-size: 9px;
+            color: var(--nerv-text-dim);
+        }
+        
+        .panel-content {
+            padding: 12px;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           PSYCHOGRAPH - Brain wave display
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .psychograph {
+            background: var(--nerv-black);
+            border: 1px solid var(--nerv-white);
+            padding: 8px;
+            margin-bottom: 12px;
+        }
+        
+        .psychograph-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            margin-bottom: 4px;
+        }
+        
+        .psychograph-label {
+            color: var(--nerv-text-dim);
+        }
+        
+        .psychograph-value {
+            color: var(--nerv-green);
+            font-weight: bold;
+        }
+        
+        .wave-container {
+            height: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .wave-container svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .wave-line {
+            fill: none;
+            stroke: var(--nerv-green);
+            stroke-width: 1.5;
+        }
+        
+        .wave-line.anomalous {
+            stroke: var(--nerv-red);
+            animation: pulse-red 0.3s infinite;
+        }
+        
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           SYNC RATIO - Large central display
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .sync-display {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .sync-value {
+            font-size: 72px;
+            font-weight: bold;
+            color: var(--nerv-green);
+            line-height: 1;
+        }
+        
+        .sync-value.danger {
+            color: var(--nerv-red);
+            animation: pulse-red 0.5s infinite;
+        }
+        
+        .sync-value.warning {
+            color: var(--nerv-orange);
+        }
+        
+        .sync-label {
+            font-size: 10px;
+            color: var(--nerv-text-dim);
+            letter-spacing: 3px;
+            margin-top: 8px;
+        }
+        
+        .sync-bar {
+            display: flex;
+            gap: 3px;
+            margin-top: 16px;
+            height: 8px;
+        }
+        
+        .sync-segment {
+            flex: 1;
+            background: var(--nerv-border);
+        }
+        
+        .sync-segment.active {
+            background: var(--nerv-green);
+        }
+        
+        .sync-segment.warning {
+            background: var(--nerv-orange);
+        }
+        
+        .sync-segment.danger {
+            background: var(--nerv-red);
+            animation: pulse-red 0.5s infinite;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           STATUS GRID
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .status-item {
+            border-left: 2px solid var(--nerv-border);
+            padding-left: 8px;
+        }
+        
+        .status-item.active {
+            border-left-color: var(--nerv-green);
+        }
+        
+        .status-item.warning {
+            border-left-color: var(--nerv-orange);
+        }
+        
+        .status-item.danger {
+            border-left-color: var(--nerv-red);
+        }
+        
+        .status-label {
+            font-size: 8px;
+            color: var(--nerv-text-dim);
+            letter-spacing: 1px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .status-label-ja {
+            color: var(--nerv-green);
+        }
+        
+        .status-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--nerv-white);
+        }
+        
+        .status-value.warning {
+            color: var(--nerv-orange);
+        }
+        
+        .status-value.danger {
+            color: var(--nerv-red);
+        }
+        
+        .status-unit {
+            font-size: 10px;
+            color: var(--nerv-text-dim);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           SKILL GRAPH DISPLAY - Hexagonal node network
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .skill-graph-container {
+            background: var(--nerv-black);
+            border: 1px solid var(--nerv-white);
+            padding: 8px;
+        }
+        
+        .skill-graph-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid var(--nerv-border);
+        }
+        
+        .skill-graph-title {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--nerv-white);
+        }
+        
+        .skill-graph-stats {
+            font-size: 9px;
+            color: var(--nerv-text-dim);
+        }
+        
+        .skill-graph-stats span {
+            color: var(--nerv-green);
+        }
+        
+        .skill-graph-svg {
+            width: 100%;
+            height: 200px;
+        }
+        
+        /* Skill node styles */
+        .skill-node {
+            cursor: pointer;
+        }
+        
+        .skill-node circle {
+            fill: var(--nerv-panel);
+            stroke: var(--nerv-white);
+            stroke-width: 1;
+        }
+        
+        .skill-node.active circle {
+            fill: var(--nerv-green);
+            fill-opacity: 0.2;
+            stroke: var(--nerv-green);
+        }
+        
+        .skill-node.warning circle {
+            stroke: var(--nerv-orange);
+        }
+        
+        .skill-node.danger circle {
+            stroke: var(--nerv-red);
+            animation: pulse-red 0.5s infinite;
+        }
+        
+        .skill-node text {
+            fill: var(--nerv-white);
+            font-size: 7px;
+            font-family: 'Courier New', monospace;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        
+        .skill-link {
+            stroke: var(--nerv-border);
+            stroke-width: 1;
+            fill: none;
+        }
+        
+        .skill-link.active {
+            stroke: var(--nerv-green);
+            stroke-opacity: 0.5;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           HEXAGONAL TARGET
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .hex-target-container {
+            text-align: center;
+            padding: 16px;
+        }
+        
+        .hex-target-svg {
+            width: 160px;
+            height: 160px;
+        }
+        
+        .hex-main {
+            fill: none;
+            stroke: var(--nerv-white);
+            stroke-width: 2;
+        }
+        
+        .hex-reticle {
+            fill: none;
+            stroke: var(--nerv-green);
+            stroke-width: 1;
+            stroke-dasharray: 4,2;
+        }
+        
+        .hex-crosshair {
+            stroke: var(--nerv-green);
+            stroke-width: 1;
+        }
+        
+        .hex-bracket {
+            stroke: var(--nerv-white);
+            stroke-width: 1.5;
+            fill: none;
+        }
+        
+        .hex-info {
+            margin-top: 8px;
+        }
+        
+        .hex-id {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--nerv-white);
+            letter-spacing: 2px;
+        }
+        
+        .hex-distance {
+            font-size: 9px;
+            color: var(--nerv-text-dim);
+            margin-top: 2px;
+        }
+        
+        .hex-status {
+            font-size: 11px;
+            color: var(--nerv-green);
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        
+        .hex-status.danger {
+            color: var(--nerv-red);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           WIREFRAME MAP
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .wireframe-map {
+            background: var(--nerv-black);
+            border: 1px solid var(--nerv-white);
+            padding: 4px;
+        }
+        
+        .wireframe-map svg {
+            width: 100%;
+            height: 180px;
+        }
+        
+        .map-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 8px;
+            padding: 4px 8px;
+            background: var(--nerv-panel);
+            border: 1px solid var(--nerv-border);
+            border-top: none;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           PATTERN INDICATOR
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .pattern-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: var(--nerv-black);
+            border: 2px solid var(--nerv-cyan);
+        }
+        
+        .pattern-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--nerv-cyan);
+            animation: pulse-cyan 1s infinite;
+        }
+        
+        @keyframes pulse-cyan {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--nerv-cyan); }
+            50% { opacity: 0.5; box-shadow: 0 0 5px var(--nerv-cyan); }
+        }
+        
+        .pattern-text {
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: var(--nerv-cyan);
+        }
+        
+        .pattern-text-ja {
+            font-size: 10px;
+            color: var(--nerv-cyan);
+            opacity: 0.7;
+        }
+        
+        .pattern-alert {
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--nerv-red);
+            animation: blink 0.5s step-end infinite;
+        }
+        
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           MAGI SYSTEM
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .magi-display {
+            text-align: center;
+            padding: 16px;
+        }
+        
+        .magi-title {
+            font-size: 11px;
+            letter-spacing: 3px;
+            color: var(--nerv-white);
+            margin-bottom: 4px;
+        }
+        
+        .magi-subtitle {
+            font-size: 9px;
+            color: var(--nerv-text-dim);
+            margin-bottom: 16px;
+        }
+        
+        .magi-nodes {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+        }
+        
+        .magi-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .magi-circle {
+            width: 36px;
+            height: 36px;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .magi-circle::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+        }
+        
+        .magi-node.caspar .magi-circle { border-color: var(--nerv-orange); }
+        .magi-node.caspar .magi-circle::before { 
+            background: var(--nerv-orange); 
+            box-shadow: 0 0 10px var(--nerv-orange);
+        }
+        
+        .magi-node.melchior .magi-circle { border-color: var(--nerv-green); }
+        .magi-node.melchior .magi-circle::before { 
+            background: var(--nerv-green); 
+            box-shadow: 0 0 10px var(--nerv-green);
+        }
+        
+        .magi-node.balthasar .magi-circle { border-color: var(--nerv-cyan); }
+        .magi-node.balthasar .magi-circle::before { 
+            background: var(--nerv-cyan); 
+            box-shadow: 0 0 10px var(--nerv-cyan);
+        }
+        
+        .magi-name {
+            font-size: 8px;
+            color: var(--nerv-text-dim);
+            margin-top: 6px;
+        }
+        
+        .magi-name-ja {
+            font-size: 7px;
+            margin-top: 2px;
+        }
+        
+        .magi-node.caspar .magi-name-ja { color: var(--nerv-orange); }
+        .magi-node.melchior .magi-name-ja { color: var(--nerv-green); }
+        .magi-node.balthasar .magi-name-ja { color: var(--nerv-cyan); }
+        
+        .magi-vote {
+            font-size: 9px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        
+        .magi-result {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 16px;
+            color: var(--nerv-green);
+        }
+        
+        .magi-result.reject {
+            color: var(--nerv-red);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           DATA STREAM
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .data-stream {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--nerv-black);
+            border-top: 2px solid var(--nerv-red);
+            padding: 4px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 9px;
+        }
+        
+        .data-stream-content {
+            display: inline-block;
+            color: var(--nerv-green);
+            animation: scroll 30s linear infinite;
+        }
+        
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* Rotating animation */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════\n           BOOT SEQUENCE OVERLAY\n           ═════════════════════════════════════════════════════════════════ */
+        
+        .boot-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--nerv-black);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        
+        .boot-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .boot-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .boot-text {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .boot-title {
+            font-size: 48px;
+            font-weight: bold;
+            letter-spacing: 12px;
+            color: var(--nerv-red);
+            text-shadow: 0 0 20px var(--nerv-red);
+            opacity: 0;
+            animation: bootFadeIn 0.5s ease forwards;
+            animation-delay: 1.5s;
+        }
+        
+        .boot-title span {
+            color: var(--nerv-white);
+        }
+        
+        @keyframes bootFadeIn {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .boot-subtitle {
+            font-size: 14px;
+            color: var(--nerv-text-dim);
+            letter-spacing: 8px;
+            margin-top: 16px;
+            opacity: 0;
+            animation: bootFadeIn 0.5s ease forwards;
+            animation-delay: 2s;
+        }
+        
+        .boot-progress {
+            width: 300px;
+            height: 4px;
+            background: var(--nerv-border);
+            margin-top: 40px;
+            opacity: 0;
+            animation: bootFadeIn 0.5s ease forwards;
+            animation-delay: 2.5s;
+        }
+        
+        .boot-progress-bar {
+            height: 100%;
+            background: var(--nerv-green);
+            width: 0%;
+            animation: bootProgress 2s ease forwards;
+            animation-delay: 2.5s;
+            box-shadow: 0 0 10px var(--nerv-green);
+        }
+        
+        @keyframes bootProgress {
+            0% { width: 0%; }
+            30% { width: 30%; }
+            50% { width: 55%; }
+            70% { width: 78%; }
+            100% { width: 100%; }
+        }
+        
+        .boot-status {
+            font-size: 10px;
+            color: var(--nerv-green);
+            margin-top: 12px;
+            letter-spacing: 2px;
+            opacity: 0;
+            animation: bootFadeIn 0.5s ease forwards;
+            animation-delay: 2.8s;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════\n           ENHANCED PSYCHOGRAPH PATTERNS\n           ═════════════════════════════════════════════════════════════════ */
+        
+        .psychograph-patterns {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        /* Wave type indicators */
+        .wave-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 8px;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--nerv-border);
+        }
+        
+        .wave-indicator:last-child {
+            border-bottom: none;
+        }
+        
+        .wave-type-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 0;
+        }
+        
+        .wave-type-dot.stable { background: var(--nerv-green); box-shadow: 0 0 6px var(--nerv-green); }
+        .wave-type-dot.active { background: var(--nerv-cyan); box-shadow: 0 0 6px var(--nerv-cyan); }
+        .wave-type-dot.alert { background: var(--nerv-orange); box-shadow: 0 0 6px var(--nerv-orange); }
+        .wave-type-dot.danger { background: var(--nerv-red); box-shadow: 0 0 6px var(--nerv-red); animation: blink 0.3s infinite; }
+        
+        .wave-type-label {
+            color: var(--nerv-text-dim);
+            flex: 1;
+        }
+        
+        .wave-type-value {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+        
+        /* Enhanced wave animations */
+        .wave-line.smooth {
+            stroke: var(--nerv-green);
+            filter: drop-shadow(0 0 3px var(--nerv-green));
+        }
+        
+        .wave-line.spike {
+            stroke: var(--nerv-orange);
+            filter: drop-shadow(0 0 4px var(--nerv-orange));
+        }
+        
+        .wave-line.noise {
+            stroke: var(--nerv-cyan);
+            filter: drop-shadow(0 0 2px var(--nerv-cyan));
+        }
+        
+        .wave-line.flatline {
+            stroke: var(--nerv-red);
+            filter: drop-shadow(0 0 6px var(--nerv-red));
+            animation: flatlinePulse 1s infinite;
+        }
+        
+        @keyframes flatlinePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .wave-line.contamination {
+            stroke: var(--nerv-crimson);
+            filter: drop-shadow(0 0 5px var(--nerv-crimson));
+            stroke-dasharray: 2,2;
+        }
+        
+        /* Brain region display */
+        .brain-regions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--nerv-border);
+        }
+        
+        .brain-region {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .brain-region-label {
+            font-size: 7px;
+            color: var(--nerv-text-dim);
+            letter-spacing: 1px;
+        }
+        
+        .brain-region-bar {
+            height: 4px;
+            background: var(--nerv-border);
+            position: relative;
+        }
+        
+        .brain-region-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        
+        .brain-region-fill.normal { background: var(--nerv-green); }
+        .brain-region-fill.elevated { background: var(--nerv-orange); }
+        .brain-region-fill.critical { background: var(--nerv-red); animation: blink 0.3s infinite; }
+    </style>
+</head>
+<body>
+    <!-- BOOT SEQUENCE OVERLAY -->
+    <div class="boot-overlay" id="bootOverlay">
+        <canvas class="boot-canvas" id="bootCanvas"></canvas>
+        <div class="boot-text">
+            <div class="boot-title">NER<span>V</span></div>
+            <div class="boot-subtitle">司令センター // COMMAND CENTER</div>
+            <div class="boot-progress">
+                <div class="boot-progress-bar"></div>
+            </div>
+            <div class="boot-status" id="bootStatus">INITIALIZING SYSTEMS...</div>
+        </div>
+    </div>
+    <!-- HEADER -->
+    <header class="header">
+        <div>
+            <div class="header-title">NER<span>V</span></div>
+            <div class="header-subtitle">司令センター // COMMAND CENTER</div>
+        </div>
+        <div class="header-status">
+            <div><span class="label">SYSTEM:</span> <span class="value">NOMINAL</span></div>
+            <div><span class="label">PATTERN:</span> <span class="value" style="color: var(--nerv-cyan);">BLUE</span></div>
+            <div><span class="label">TIME:</span> <span class="value" id="clock">00:00:00</span></div>
+        </div>
+    </header>
+    
+    <!-- MAIN -->
+    <main class="main">
+        <!-- LEFT COLUMN -->
+        <div class="column">
+            <!-- Psychograph Panel - Enhanced -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">PSYCHOGRAPH</span>
+                    <span class="panel-title-ja">心理図</span>
+                </div>
+                <div class="panel-content">
+                    <!-- Brain Wave 1 - Smooth/Stable -->
+                    <div class="psychograph">
+                        <div class="psychograph-header">
+                            <span class="psychograph-label">EMOTIONAL // 感情</span>
+                            <span class="psychograph-value">STABLE</span>
+                        </div>
+                        <div class="wave-container">
+                            <svg viewBox="0 0 260 40" preserveAspectRatio="none" id="wave-emotional">
+                                <path class="wave-line smooth" d="M0,20" id="path-emotional"></path>
+                            </svg>
+                        </div>
+                        <div class="brain-regions">
+                            <div class="brain-region">
+                                <span class="brain-region-label">FRONTAL // 前頭</span>
+                                <div class="brain-region-bar"><div class="brain-region-fill normal" style="width: 78%;"></div></div>
+                            </div>
+                            <div class="brain-region">
+                                <span class="brain-region-label">TEMPORAL // 側頭</span>
+                                <div class="brain-region-bar"><div class="brain-region-fill normal" style="width: 82%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Brain Wave 2 - Active Processing -->
+                    <div class="psychograph">
+                        <div class="psychograph-header">
+                            <span class="psychograph-label">RATIONAL // 理性</span>
+                            <span class="psychograph-value" style="color: var(--nerv-cyan);">ACTIVE</span>
+                        </div>
+                        <div class="wave-container">
+                            <svg viewBox="0 0 260 40" preserveAspectRatio="none" id="wave-rational">
+                                <path class="wave-line noise" d="M0,20" id="path-rational"></path>
+                            </svg>
+                        </div>
+                        <div class="brain-regions">
+                            <div class="brain-region">
+                                <span class="brain-region-label">PARIETAL // 頭頂</span>
+                                <div class="brain-region-bar"><div class="brain-region-fill elevated" style="width: 91%;"></div></div>
+                            </div>
+                            <div class="brain-region">
+                                <span class="brain-region-label">OCCIPITAL // 後頭</span>
+                                <div class="brain-region-bar"><div class="brain-region-fill normal" style="width: 67%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Brain Wave 3 - Spike Pattern (Alert) -->
+                    <div class="psychograph">
+                        <div class="psychograph-header">
+                            <span class="psychograph-label">SYNC PATTERN // 同期</span>
+                            <span class="psychograph-value" style="color: var(--nerv-orange);">IRREGULAR</span>
+                        </div>
+                        <div class="wave-container">
+                            <svg viewBox="0 0 260 40" preserveAspectRatio="none" id="wave-sync">
+                                <path class="wave-line spike" d="M0,20" id="path-sync"></path>
+                            </svg>
+                        </div>
+                        <div class="brain-regions">
+                            <div class="brain-region">
+                                <span class="brain-region-label">SYNC RATE // 同期率</span>
+                                <div class="brain-region-bar"><div class="brain-region-fill elevated" style="width: 94%;"></div></div>
+                            </div>
+                            <div class="brain-region">
+                                <span class="brain-region-label">DEVIATION // 偏差</span>
+                                <div class="brain-region-bar"><div class="brain-region-fill elevated" style="width: 23%;"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Brain Wave 4 - Contamination Warning (Hidden by default) -->
+                    <div class="psychograph" id="wave-contamination-container" style="display: none;">
+                        <div class="psychograph-header">
+                            <span class="psychograph-label">MENTAL STATUS // 精神</span>
+                            <span class="psychograph-value" style="color: var(--nerv-red); animation: blink 0.3s infinite;">⚠ CONTAMINATION</span>
+                        </div>
+                        <div class="wave-container">
+                            <svg viewBox="0 0 260 40" preserveAspectRatio="none" id="wave-contamination">
+                                <path class="wave-line contamination" d="M0,20" id="path-contamination"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SYNC RATIO -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">SYNC RATIO</span>
+                    <span class="panel-title-ja">同期率</span>
+                </div>
+                <div class="panel-content">
+                    <div class="sync-display">
+                        <div class="sync-value">94.2<span style="font-size: 24px;">%</span></div>
+                        <div class="sync-label">SYNC RATIO // 同期率</div>
+                        <div class="sync-bar">
+                            <div class="sync-segment active"></div>
+                            <div class="sync-segment active"></div>
+                            <div class="sync-segment active"></div>
+                            <div class="sync-segment active"></div>
+                            <div class="sync-segment active"></div>
+                            <div class="sync-segment active"></div>
+                            <div class="sync-segment active"></div>
+                            <div class="sync-segment active warning"></div>
+                            <div class="sync-segment warning"></div>
+                            <div class="sync-segment"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- UNIT STATUS -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">UNIT STATUS</span>
+                    <span class="panel-title-ja">状況</span>
+                </div>
+                <div class="panel-content">
+                    <div class="status-grid">
+                        <div class="status-item active">
+                            <span class="status-label">PILOT <span class="status-label-ja">パイロット</span></span>
+                            <span class="status-value">SHINJI</span>
+                        </div>
+                        <div class="status-item active">
+                            <span class="status-label">UNIT <span class="status-label-ja">機体</span></span>
+                            <span class="status-value">EVA-01</span>
+                        </div>
+                        <div class="status-item warning">
+                            <span class="status-label">POWER <span class="status-label-ja">電源</span></span>
+                            <span class="status-value warning">3:47</span>
+                        </div>
+                        <div class="status-item active">
+                            <span class="status-label">AT FIELD <span class="status-label-ja">A.T.場</span></span>
+                            <span class="status-value">STABLE</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CENTER COLUMN -->
+        <div class="column" style="display: flex; flex-direction: column;">
+            <!-- PATTERN BAR -->
+            <div class="pattern-bar">
+                <div class="pattern-dot"></div>
+                <div>
+                    <div class="pattern-text">PATTERN: BLUE</div>
+                    <div class="pattern-text-ja">パターン青</div>
+                </div>
+                <div class="pattern-alert">▲ ANGEL DETECTED ▲</div>
+            </div>
+            
+            <!-- SKILL GRAPH -->
+            <div class="panel" style="flex: 1;">
+                <div class="panel-header">
+                    <span class="panel-title">SKILL GRAPH</span>
+                    <span class="panel-title-ja">スキルグラフ</span>
+                </div>
+                <div class="panel-content">
+                    <div class="skill-graph-container">
+                        <div class="skill-graph-header">
+                            <span class="skill-graph-title">ACTIVE CHAIN // 実行中</span>
+                            <span class="skill-graph-stats">NODES: <span>12</span> | LINKS: <span>18</span> | CONF: <span>94.2%</span></span>
+                        </div>
+                        <svg class="skill-graph-svg" viewBox="0 0 280 200">
+                            <!-- Links (draw first, under nodes) -->
+                            <g class="links">
+                                <!-- web_research -> data_analysis -->
+                                <path class="skill-link active" d="M 70,50 Q 100,30 130,50" />
+                                <!-- data_analysis -> code_generation -->
+                                <path class="skill-link active" d="M 130,50 Q 160,70 190,90" />
+                                <!-- code_generation -> file_write -->
+                                <path class="skill-link active" d="M 190,90 Q 220,110 250,130" />
+                                <!-- terminal -> code_generation -->
+                                <path class="skill-link active" d="M 70,130 Q 130,110 190,90" />
+                                <!-- embedding -> data_analysis -->
+                                <path class="skill-link" d="M 70,90 Q 100,70 130,50" />
+                                <!-- llm -> code_generation -->
+                                <path class="skill-link" d="M 130,130 Q 160,110 190,90" />
+                                <!-- vision -> data_analysis -->
+                                <path class="skill-link" d="M 70,170 Q 100,110 130,50" />
+                                <!-- More links -->
+                                <path class="skill-link" d="M 130,50 L 130,90" />
+                                <path class="skill-link" d="M 130,90 L 190,90" />
+                                <path class="skill-link" d="M 190,50 L 190,90" />
+                            </g>
+                            
+                            <!-- Nodes -->
+                            <g class="nodes">
+                                <!-- Row 1 -->
+                                <g class="skill-node active" transform="translate(70, 50)">
+                                    <circle r="18" />
+                                    <text>WEB</text>
+                                </g>
+                                <g class="skill-node active" transform="translate(130, 50)">
+                                    <circle r="18" />
+                                    <text>ANALYSIS</text>
+                                </g>
+                                <g class="skill-node" transform="translate(190, 50)">
+                                    <circle r="18" />
+                                    <text>LLM</text>
+                                </g>
+                                <g class="skill-node" transform="translate(250, 50)">
+                                    <circle r="14" />
+                                    <text>EMBED</text>
+                                </g>
+                                
+                                <!-- Row 2 -->
+                                <g class="skill-node active" transform="translate(70, 90)">
+                                    <circle r="14" />
+                                    <text>EMBED</text>
+                                </g>
+                                <g class="skill-node active" transform="translate(130, 90)">
+                                    <circle r="18" />
+                                    <text>DERIVE</text>
+                                </g>
+                                <g class="skill-node active" transform="translate(190, 90)">
+                                    <circle r="20" />
+                                    <text>CODE</text>
+                                </g>
+                                <g class="skill-node" transform="translate(250, 90)">
+                                    <circle r="14" />
+                                    <text>FILE</text>
+                                </g>
+                                
+                                <!-- Row 3 -->
+                                <g class="skill-node active" transform="translate(70, 130)">
+                                    <circle r="16" />
+                                    <text>TERM</text>
+                                </g>
+                                <g class="skill-node" transform="translate(130, 130)">
+                                    <circle r="14" />
+                                    <text>VISION</text>
+                                </g>
+                                <g class="skill-node" transform="translate(190, 130)">
+                                    <circle r="14" />
+                                    <text>TEST</text>
+                                </g>
+                                <g class="skill-node active" transform="translate(250, 130)">
+                                    <circle r="18" />
+                                    <text>WRITE</text>
+                                </g>
+                                
+                                <!-- Row 4 -->
+                                <g class="skill-node" transform="translate(70, 170)">
+                                    <circle r="12" />
+                                    <text>AUTH</text>
+                                </g>
+                                <g class="skill-node danger" transform="translate(130, 170)">
+                                    <circle r="14" />
+                                    <text>CLAIM</text>
+                                </g>
+                                <g class="skill-node" transform="translate(190, 170)">
+                                    <circle r="12" />
+                                    <text>HOOK</text>
+                                </g>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- WIREFRAME MAP -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">TACTICAL MAP</span>
+                    <span class="panel-title-ja">戦術地図</span>
+                </div>
+                <div class="wireframe-map">
+                    <svg viewBox="0 0 300 180" preserveAspectRatio="xMidYMid slice">
+                        <!-- Grid -->
+                        <g stroke="#333" stroke-width="0.3">
+                            <line x1="150" y1="10" x2="30" y2="180" />
+                            <line x1="150" y1="10" x2="90" y2="180" />
+                            <line x1="150" y1="10" x2="150" y2="180" />
+                            <line x1="150" y1="10" x2="210" y2="180" />
+                            <line x1="150" y1="10" x2="270" y2="180" />
+                            <line x1="20" y1="40" x2="280" y2="40" />
+                            <line x1="10" y1="80" x2="290" y2="80" />
+                            <line x1="0" y1="130" x2="300" y2="130" />
+                        </g>
+                        
+                        <!-- Contours -->
+                        <g fill="none" stroke="#00FF41" stroke-width="0.5" opacity="0.3">
+                            <path d="M 30 70 Q 80 65 130 75 T 230 70 T 280 75" />
+                            <path d="M 20 110 Q 70 100 120 115 T 220 105 T 280 115" />
+                        </g>
+                        
+                        <!-- EVA-01 blip -->
+                        <circle cx="200" cy="100" r="4" fill="#00FF41" />
+                        <text x="210" y="104" fill="#00FF41" font-size="8">EVA-01</text>
+                        
+                        <!-- Target blip -->
+                        <circle cx="100" cy="60" r="5" fill="#FF0000">
+                            <animate attributeName="r" values="5;8;5" dur="0.5s" repeatCount="indefinite" />
+                        </circle>
+                        <circle cx="100" cy="60" r="10" fill="none" stroke="#FF0000" stroke-width="1">
+                            <animate attributeName="r" values="10;18;10" dur="0.5s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0;0.8" dur="0.5s" repeatCount="indefinite" />
+                        </circle>
+                        <text x="110" y="64" fill="#FF0000" font-size="8">TARGET</text>
+                    </svg>
+                </div>
+                <div class="map-footer">
+                    <span style="color: var(--nerv-text-dim);">AREA: TOKYO-3</span>
+                    <span style="color: var(--nerv-green);">GRID: 47-K</span>
+                    <span style="color: var(--nerv-text-dim);">1:50000</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- RIGHT COLUMN -->
+        <div class="column">
+            <!-- HEXAGONAL TARGET -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">TARGET LOCK</span>
+                    <span class="panel-title-ja">目標補足</span>
+                </div>
+                <div class="panel-content">
+                    <div class="hex-target-container">
+                        <svg class="hex-target-svg" viewBox="0 0 160 160">
+                            <!-- Outer hexagon (flat-top) -->
+                            <polygon class="hex-main" points="80,20 130,47.5 130,112.5 80,140 30,112.5 30,47.5" />
+                            
+                            <!-- Rotating inner reticle -->
+                            <g style="transform-origin: 80px 80px; animation: rotate 6s linear infinite;">
+                                <polygon class="hex-reticle" points="80,35 115,55 115,105 80,125 45,105 45,55" />
+                            </g>
+                            
+                            <!-- Crosshair -->
+                            <line class="hex-crosshair" x1="70" y1="80" x2="90" y2="80" />
+                            <line class="hex-crosshair" x1="80" y1="70" x2="80" y2="90" />
+                            <circle cx="80" cy="80" r="3" fill="#00FF41" opacity="0.8" />
+                            
+                            <!-- Corner brackets -->
+                            <path class="hex-bracket" d="M 30 55 L 30 47.5 L 37.5 47.5" />
+                            <path class="hex-bracket" d="M 122.5 47.5 L 130 47.5 L 130 55" />
+                            <path class="hex-bracket" d="M 30 105 L 30 112.5 L 37.5 112.5" />
+                            <path class="hex-bracket" d="M 122.5 112.5 L 130 112.5 L 130 105" />
+                        </svg>
+                        <div class="hex-info">
+                            <div class="hex-id">ANGEL-04</div>
+                            <div class="hex-distance">DIST: 2,847m // BRG: 047°</div>
+                            <div class="hex-status">TRACKING // 追跡中</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- MAGI -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">MAGI SYSTEM</span>
+                    <span class="panel-title-ja"> Magi</span>
+                </div>
+                <div class="panel-content">
+                    <div class="magi-display">
+                        <div class="magi-title">MAGI DECISION</div>
+                        <div class="magi-subtitle">三種の決定</div>
+                        <div class="magi-nodes">
+                            <div class="magi-node caspar">
+                                <div class="magi-circle"></div>
+                                <span class="magi-name">CASPAR</span>
+                                <span class="magi-name-ja">論理</span>
+                                <span class="magi-vote" style="color: var(--nerv-orange);">賛成</span>
+                            </div>
+                            <div class="magi-node melchior">
+                                <div class="magi-circle"></div>
+                                <span class="magi-name">MELCHIOR</span>
+                                <span class="magi-name-ja">科学</span>
+                                <span class="magi-vote" style="color: var(--nerv-green);">賛成</span>
+                            </div>
+                            <div class="magi-node balthasar">
+                                <div class="magi-circle"></div>
+                                <span class="magi-name">BALTHASAR</span>
+                                <span class="magi-name-ja">感情</span>
+                                <span class="magi-vote" style="color: var(--nerv-cyan);">賛成</span>
+                            </div>
+                        </div>
+                        <div class="magi-result">承認 // APPROVED</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- EVENT LOG -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">EVENT LOG</span>
+                    <span class="panel-title-ja">イベント</span>
+                </div>
+                <div class="panel-content" style="font-size: 9px; max-height: 150px; overflow-y: auto;">
+                    <div style="color: var(--nerv-text-dim); margin-bottom: 2px;">[14:32:07] SYSTEM ONLINE</div>
+                    <div style="color: var(--nerv-green); margin-bottom: 2px;">[14:32:15] MAGI LINK ESTABLISHED</div>
+                    <div style="color: var(--nerv-cyan); margin-bottom: 2px;">[14:33:02] PATTERN BLUE DETECTED</div>
+                    <div style="color: var(--nerv-red); margin-bottom: 2px;">[14:33:18] ▲ ANGEL APPROACHING ▲</div>
+                    <div style="color: var(--nerv-green); margin-bottom: 2px;">[14:34:01] EVA-01 LAUNCH AUTHORIZED</div>
+                    <div style="color: var(--nerv-orange); margin-bottom: 2px;">[14:35:22] TARGET LOCK ACQUIRED</div>
+                    <div style="color: var(--nerv-text-dim); margin-bottom: 2px;">[14:36:00] AWAITING COMMAND...</div>
+                </div>
+            </div>
+            
+            <!-- RESOURCES -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">RESOURCES</span>
+                    <span class="panel-title-ja">資源</span>
+                </div>
+                <div class="panel-content">
+                    <div class="status-grid">
+                        <div class="status-item warning">
+                            <span class="status-label">BATTERY <span class="status-label-ja">電池</span></span>
+                            <span class="status-value warning">47<span class="status-unit">%</span></span>
+                        </div>
+                        <div class="status-item active">
+                            <span class="status-label">LCL TEMP <span class="status-label-ja">温度</span></span>
+                            <span class="status-value">28.4<span class="status-unit">°C</span></span>
+                        </div>
+                        <div class="status-item active">
+                            <span class="status-label">O2 <span class="status-label-ja">酸素</span></span>
+                            <span class="status-value">21.4<span class="status-unit">%</span></span>
+                        </div>
+                        <div class="status-item warning">
+                            <span class="status-label">PRESSURE <span class="status-label-ja">気圧</span></span>
+                            <span class="status-value warning">0.87<span class="status-unit">ATM</span></span>
+                        </div>
+                    </div>
+                    
+                    <!-- CONTAMINATION GAUGE -->
+                    <div class="contamination-gauge" style="margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--nerv-border);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                            <span style="font-size: 8px; color: var(--nerv-text-dim);">CONTAMINATION // 精神汚染</span>
+                            <span id="contaminationValue" style="font-size: 10px; color: var(--nerv-green); font-weight: bold;">12.3% NOMINAL</span>
+                        </div>
+                        <div style="height: 6px; background: var(--nerv-border); position: relative;">
+                            <div id="contaminationFill" style="height: 100%; width: 12.3%; background: var(--nerv-green); transition: width 0.3s ease, background 0.3s ease;"></div>
+                            <!-- Threshold markers -->
+                            <div style="position: absolute; left: 30%; top: -2px; bottom: -2px; width: 1px; background: var(--nerv-orange);"></div>
+                            <div style="position: absolute; left: 60%; top: -2px; bottom: -2px; width: 1px; background: var(--nerv-red);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RADAR DISPLAY -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">RADAR</span>
+                    <span class="panel-title-ja">レーダー</span>
+                </div>
+                <div class="panel-content" style="padding: 8px;">
+                    <div style="background: #000; border: 1px solid var(--nerv-white); position: relative;">
+                        <svg id="radarSvg" viewBox="0 0 180 180" style="width: 100%; display: block;">
+                            <defs>
+                                <radialGradient id="radarSweepGrad">
+                                    <stop offset="0%" stop-color="transparent"/>
+                                    <stop offset="70%" stop-color="transparent"/>
+                                    <stop offset="100%" stop-color="#00FF41" stop-opacity="0.4"/>
+                                </radialGradient>
+                                <filter id="radarGlow">
+                                    <feGaussianBlur stdDeviation="2" result="blur"/>
+                                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                                </filter>
+                            </defs>
+                            
+                            <!-- Range rings -->
+                            <circle cx="90" cy="90" r="25" fill="none" stroke="#222" stroke-width="0.5"/>
+                            <circle cx="90" cy="90" r="50" fill="none" stroke="#333" stroke-width="0.5"/>
+                            <circle cx="90" cy="90" r="75" fill="none" stroke="#333" stroke-width="0.5"/>
+                            <circle cx="90" cy="90" r="80" fill="none" stroke="var(--nerv-white)" stroke-width="1"/>
+                            
+                            <!-- Cross lines -->
+                            <line x1="90" y1="10" x2="90" y2="170" stroke="#222" stroke-width="0.3"/>
+                            <line x1="10" y1="90" x2="170" y2="90" stroke="#222" stroke-width="0.3"/>
+                            <line x1="30" y1="30" x2="150" y2="150" stroke="#222" stroke-width="0.3" stroke-dasharray="4,4"/>
+                            <line x1="150" y1="30" x2="30" y2="150" stroke="#222" stroke-width="0.3" stroke-dasharray="4,4"/>
+                            
+                            <!-- Cardinal directions -->
+                            <text x="90" y="15" fill="var(--nerv-orange)" font-size="8" text-anchor="middle" font-weight="bold">N</text>
+                            <text x="170" y="93" fill="var(--nerv-text-dim)" font-size="8" text-anchor="middle">E</text>
+                            <text x="90" y="178" fill="var(--nerv-text-dim)" font-size="8" text-anchor="middle">S</text>
+                            <text x="10" y="93" fill="var(--nerv-text-dim)" font-size="8" text-anchor="middle">W</text>
+                            
+                            <!-- Sweep path (animated via JS) -->
+                            <path id="radarSweepPath" fill="url(#radarSweepGrad)" opacity="0.6"/>
+                            
+                            <!-- Sweep line -->
+                            <line id="radarSweepLine" x1="90" y1="90" x2="90" y2="10" stroke="#00FF41" stroke-width="2" filter="url(#radarGlow)"/>
+                            
+                            <!-- Target blips (will be managed by JS) -->
+                            <g id="radarBlips"></g>
+                            
+                            <!-- Center point -->
+                            <circle cx="90" cy="90" r="3" fill="var(--nerv-orange)"/>
+                            <circle cx="90" cy="90" r="5" fill="none" stroke="var(--nerv-orange)" stroke-width="1"/>
+                        </svg>
+                        
+                        <!-- Range labels -->
+                        <div style="position: absolute; bottom: 4px; right: 4px; font-size: 7px; color: var(--nerv-text-dim);">RANGE: 5KM</div>
+                    </div>
+                    <div style="text-align: center; margin-top: 4px;">
+                        <span style="font-size: 9px; color: var(--nerv-text-dim);">RADAR // レーダー</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ALERT MODE BUTTON -->
+            <div class="panel" style="border-color: var(--nerv-crimson-dark);">
+                <div class="panel-header" style="background: var(--nerv-crimson-dark);">
+                    <span class="panel-title">SYSTEM CONTROL</span>
+                    <span class="panel-title-ja">制御</span>
+                </div>
+                <div class="panel-content" style="text-align: center;">
+                    <button id="alertToggle" style="
+                        background: transparent;
+                        border: 2px solid var(--nerv-crimson);
+                        color: var(--nerv-crimson);
+                        padding: 8px 16px;
+                        font-family: 'Courier New', monospace;
+                        font-size: 10px;
+                        font-weight: bold;
+                        letter-spacing: 2px;
+                        cursor: pointer;
+                        width: 100%;
+                        transition: all 0.2s ease;
+                    ">
+                        ▲ TRIGGER ALERT MODE ▲
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- DATA STREAM -->
+    <div class="data-stream">
+        <div class="data-stream-content">
+            SYNC:94.2%  █  PATTERN:BLUE  █  TARGET:LOCKED  █  DIST:2847m  █  BRG:047°  █  BATT:47%  █  O2:21.4%  █  AT-FIELD:STABLE  █  PILOT:SHINJI  █  UNIT:EVA-01  █  STATUS:ACTIVE  █  THREAT:ANGEL-04  █  MAGI:APPROVED  █  CONF:94.2%  █  SYNC:94.2%  █  PATTERN:BLUE  █  TARGET:LOCKED  █  DIST:2847m  █  BRG:047°  █  BATT:47%  █  O2:21.4%  █  AT-FIELD:STABLE  █  PILOT:SHINJI  █  UNIT:EVA-01  █  STATUS:ACTIVE  █  THREAT:ANGEL-04  █  MAGI:APPROVED  █  CONF:94.2%
+        </div>
+    </div>
+    
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // BOOT SEQUENCE - Static noise + panel reveal
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        const bootMessages = [
+            'INITIALIZING MAGI LINK...',
+            'LOADING PERSONA DATA...',
+            'CALIBRATING SYNC RATE...',
+            'ESTABLISHING AT FIELD...',
+            'SYSTEM READY'
+        ];
+        
+        let bootCanvas = document.getElementById('bootCanvas');
+        let bootCtx = bootCanvas.getContext('2d');
+        let bootOverlay = document.getElementById('bootOverlay');
+        let bootStatus = document.getElementById('bootStatus');
+        
+        function resizeBootCanvas() {
+            bootCanvas.width = window.innerWidth;
+            bootCanvas.height = window.innerHeight;
+        }
+        resizeBootCanvas();
+        window.addEventListener('resize', resizeBootCanvas);
+        
+        // Static noise effect
+        let noiseFrame = 0;
+        function drawNoise(alpha) {
+            const imageData = bootCtx.createImageData(bootCanvas.width, bootCanvas.height);
+            const data = imageData.data;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const noise = Math.random() * 255;
+                const intensity = Math.random() < 0.01 ? 255 : noise * 0.3;
+                data[i] = intensity;     // R
+                data[i + 1] = intensity; // G
+                data[i + 2] = intensity; // B
+                data[i + 3] = Math.random() * alpha * 255; // A
+            }
+            
+            bootCtx.putImageData(imageData, 0, 0);
+        }
+        
+        // Animate boot sequence
+        let bootStartTime = Date.now();
+        let messageIndex = 0;
+        
+        function animateBoot() {
+            const elapsed = Date.now() - bootStartTime;
+            const duration = 4500; // 4.5 seconds total
+            
+            // Fade out noise over time
+            const noiseAlpha = Math.max(0, 1 - (elapsed / duration));
+            
+            if (elapsed < duration) {
+                drawNoise(noiseAlpha);
+                
+                // Update status messages
+                const messageTime = duration / bootMessages.length;
+                const currentMessage = Math.floor(elapsed / messageTime);
+                if (currentMessage !== messageIndex && currentMessage < bootMessages.length) {
+                    messageIndex = currentMessage;
+                    bootStatus.textContent = bootMessages[messageIndex];
+                }
+                
+                requestAnimationFrame(animateBoot);
+            } else {
+                // Hide boot overlay
+                bootOverlay.classList.add('hidden');
+                setTimeout(() => bootOverlay.remove(), 500);
+            }
+        }
+        
+        animateBoot();
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // DYNAMIC PSYCHOGRAPH WAVE GENERATION
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        // Wave generation functions for different patterns
+        const waveGenerators = {
+            // Smooth sine wave - stable emotional state
+            smooth: (frame, width) => {
+                let d = 'M0,20';
+                for (let x = 10; x < width; x += 20) {
+                    const phase = (frame + x * 0.3) * 0.1;
+                    const y = 20 + Math.sin(phase) * 8;
+                    d += ` L${x},${y.toFixed(1)}`;
+                }
+                return d;
+            },
+            
+            // Noise pattern - active rational processing
+            noise: (frame, width) => {
+                let d = 'M0,20';
+                let y = 20;
+                for (let x = 10; x < width; x += 8) {
+                    y = 20 + (Math.random() - 0.5) * 12;
+                    d += ` L${x},${Math.max(2, Math.min(38, y)).toFixed(1)}`;
+                }
+                return d;
+            },
+            
+            // Spike pattern - irregular sync
+            spike: (frame, width) => {
+                let d = 'M0,20';
+                const spikePositions = [40, 80, 120, 160, 200, 240];
+                
+                for (let x = 10; x < width; x += 5) {
+                    let y = 20;
+                    // Check if near a spike position
+                    for (const sp of spikePositions) {
+                        const dist = Math.abs(x - sp);
+                        if (dist < 15) {
+                            const spikePhase = (frame * 0.05 + sp * 0.1);
+                            const spikeHeight = Math.sin(spikePhase) * 15;
+                            if (dist < 5) {
+                                y = 20 + (x < sp ? -spikeHeight : spikeHeight);
+                            }
+                        }
+                    }
+                    d += ` L${x},${y.toFixed(1)}`;
+                }
+                return d;
+            },
+            
+            // Contamination pattern - mental pollution
+            contamination: (frame, width) => {
+                let d = 'M0,20';
+                for (let x = 10; x < width; x += 6) {
+                    const chaos = Math.sin(frame * 0.02 + x * 0.1) * Math.cos(x * 0.05);
+                    const y = 20 + chaos * 15 + (Math.random() - 0.5) * 8;
+                    d += ` L${x},${Math.max(1, Math.min(39, y)).toFixed(1)}`;
+                }
+                return d;
+            },
+            
+            // Flatline - critical danger
+            flatline: (frame, width) => {
+                const flicker = Math.sin(frame * 0.1) > 0.7 ? 20 : 19;
+                return `M0,${flicker} ` + Array(width/10).fill().map((_, i) => `L${i*10},${flicker}`).join(' ');
+            }
+        };
+        
+        // Animate waves
+        let waveFrame = 0;
+        
+        function animateWaves() {
+            waveFrame++;
+            
+            // Emotional wave - smooth
+            const pathEmotional = document.getElementById('path-emotional');
+            if (pathEmotional) {
+                pathEmotional.setAttribute('d', waveGenerators.smooth(waveFrame, 260));
+            }
+            
+            // Rational wave - noise
+            const pathRational = document.getElementById('path-rational');
+            if (pathRational) {
+                pathRational.setAttribute('d', waveGenerators.noise(waveFrame, 260));
+            }
+            
+            // Sync wave - spike
+            const pathSync = document.getElementById('path-sync');
+            if (pathSync) {
+                pathSync.setAttribute('d', waveGenerators.spike(waveFrame, 260));
+            }
+            
+            // Contamination wave (if visible)
+            const pathContamination = document.getElementById('path-contamination');
+            if (pathContamination) {
+                pathContamination.setAttribute('d', waveGenerators.contamination(waveFrame, 260));
+            }
+            
+            requestAnimationFrame(animateWaves);
+        }
+        
+        // Start wave animation after boot sequence
+        setTimeout(animateWaves, 4600);
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // CLOCK UPDATE
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        function updateClock() {
+            const now = new Date();
+            const h = String(now.getHours()).padStart(2, '0');
+            const m = String(now.getMinutes()).padStart(2, '0');
+            const s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${h}:${m}:${s}`;
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // RADAR DISPLAY - Rotating sweep with target blips
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        const radarSweepLine = document.getElementById('radarSweepLine');
+        const radarSweepPath = document.getElementById('radarSweepPath');
+        const radarBlips = document.getElementById('radarBlips');
+        
+        // Radar targets
+        const radarTargets = [
+            { id: 'angel-04', angle: 45, distance: 60, type: 'hostile', label: 'ANGEL-04' },
+            { id: 'eva-02', angle: 180, distance: 35, type: 'friendly', label: 'EVA-02' },
+            { id: 'unknown-1', angle: 270, distance: 75, type: 'unknown', label: 'UNKNOWN' },
+        ];
+        
+        // Blip tracking
+        const blipStates = new Map();
+        radarTargets.forEach(t => blipStates.set(t.id, { visible: false, age: 100 }));
+        
+        function polarToCartesian(angle, distance) {
+            const rad = (angle - 90) * Math.PI / 180;
+            const r = (distance / 100) * 80; // 80 is max radius
+            return {
+                x: 90 + r * Math.cos(rad),
+                y: 90 + r * Math.sin(rad)
+            };
+        }
+        
+        let radarAngle = 0;
+        
+        function animateRadar() {
+            radarAngle = (radarAngle + 0.5) % 360;
+            
+            // Update sweep line
+            const endPos = polarToCartesian(radarAngle, 100);
+            if (radarSweepLine) {
+                radarSweepLine.setAttribute('x2', endPos.x);
+                radarSweepLine.setAttribute('y2', endPos.y);
+            }
+            
+            // Create sweep path (cone)
+            if (radarSweepPath) {
+                const startX = 90;
+                const startY = 90;
+                const sweepAngleRad = (radarAngle - 90) * Math.PI / 180;
+                const arcStart = ((radarAngle - 30 - 90) * Math.PI / 180);
+                const arcEnd = sweepAngleRad;
+                
+                const p1 = { x: startX + 80 * Math.cos(arcStart), y: startY + 80 * Math.sin(arcStart) };
+                const p2 = { x: startX + 80 * Math.cos(arcEnd), y: startY + 80 * Math.sin(arcEnd) };
+                
+                const largeArc = 30 > 180 ? 1 : 0;
+                const d = `M ${startX} ${startY} L ${p1.x} ${p1.y} A 80 80 0 ${largeArc} 1 ${p2.x} ${p2.y} Z`;
+                radarSweepPath.setAttribute('d', d);
+            }
+            
+            // Update blips when sweep passes
+            radarTargets.forEach(target => {
+                const angleDiff = Math.abs((radarAngle - target.angle + 180) % 360 - 180);
+                const state = blipStates.get(target.id);
+                
+                if (angleDiff < 3 && state.age > 50) {
+                    // Sweep just passed this target
+                    state.visible = true;
+                    state.age = 0;
+                }
+                
+                state.age += 0.5;
+                if (state.age > 100) state.visible = false;
+            });
+            
+            // Render blips
+            if (radarBlips) {
+                radarBlips.innerHTML = '';
+                radarTargets.forEach(target => {
+                    const state = blipStates.get(target.id);
+                    if (!state.visible && state.age > 100) return;
+                    
+                    const pos = polarToCartesian(target.angle, target.distance);
+                    const opacity = Math.max(0, 1 - state.age / 100);
+                    const size = 4 + (1 - state.age / 100) * 3;
+                    
+                    const color = target.type === 'hostile' ? '#FF0000' 
+                                : target.type === 'friendly' ? '#00FF41' 
+                                : '#FF6600';
+                    
+                    // Blip circle
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', pos.x);
+                    circle.setAttribute('cy', pos.y);
+                    circle.setAttribute('r', size);
+                    circle.setAttribute('fill', color);
+                    circle.setAttribute('opacity', opacity);
+                    circle.setAttribute('filter', 'url(#radarGlow)');
+                    radarBlips.appendChild(circle);
+                    
+                    // Outer ring for hostile
+                    if (target.type === 'hostile') {
+                        const ring = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                        ring.setAttribute('cx', pos.x);
+                        ring.setAttribute('cy', pos.y);
+                        ring.setAttribute('r', size + 4);
+                        ring.setAttribute('fill', 'none');
+                        ring.setAttribute('stroke', color);
+                        ring.setAttribute('stroke-width', '1');
+                        ring.setAttribute('opacity', opacity * 0.5);
+                        radarBlips.appendChild(ring);
+                    }
+                    
+                    // Label
+                    if (target.label) {
+                        const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        text.setAttribute('x', pos.x + 8);
+                        text.setAttribute('y', pos.y + 2);
+                        text.setAttribute('fill', color);
+                        text.setAttribute('font-size', '7');
+                        text.setAttribute('opacity', opacity);
+                        text.textContent = target.label;
+                        radarBlips.appendChild(text);
+                    }
+                });
+            }
+            
+            requestAnimationFrame(animateRadar);
+        }
+        
+        setTimeout(animateRadar, 4600);
+        
+        // ═══════════════════════════════════════════════════════════════════════════════
+        // ALERT MODE - Red flashing emergency state
+        // ═══════════════════════════════════════════════════════════════════════════════
+        
+        let alertMode = false;
+        let alertAnimationFrame = 0;
+        
+        const alertToggle = document.getElementById('alertToggle');
+        const contaminationValue = document.getElementById('contaminationValue');
+        const contaminationFill = document.getElementById('contaminationFill');
+        
+        // Create alert banner (hidden by default)
+        const alertBanner = document.createElement('div');
+        alertBanner.id = 'alertBanner';
+        alertBanner.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #DC143C;
+            padding: 8px 16px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            font-family: 'Courier New', monospace;
+            z-index: 9990;
+            border-bottom: 2px solid #FF0000;
+        `;
+        alertBanner.innerHTML = `
+            <span style="color: #000; font-size: 11px; font-weight: bold; letter-spacing: 3px;">▲ DANGER ▲</span>
+            <span style="color: #000; font-size: 12px; font-weight: bold; letter-spacing: 2px;">ANGEL APPROACHING - PATTERN BLUE</span>
+            <span style="color: #000; font-size: 10px;">// 使徒接近中</span>
+        `;
+        document.body.appendChild(alertBanner);
+        
+        // Create emergency overlay (hidden by default)
+        const emergencyOverlay = document.createElement('div');
+        emergencyOverlay.id = 'emergencyOverlay';
+        emergencyOverlay.style.cssText = `
+            position: fixed;
+            inset: 0;
+            background: rgba(139, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9000;
+            pointer-events: none;
+            border: 4px solid #FF0000;
+        `;
+        emergencyOverlay.innerHTML = `
+            <div style="font-size: 32px; color: #FF0000; letter-spacing: 8px; font-weight: bold; text-shadow: 0 0 15px #FF0000; font-family: 'Courier New', monospace;">
+                ▲ ▲ ▲ SYSTEM CONTAMINATION ▲ ▲ ▲
+            </div>
+            <div style="font-size: 14px; color: #DC143C; margin-top: 12px; letter-spacing: 4px; font-family: 'Courier New', monospace;">
+                システム汚染検出
+            </div>
+        `;
+        document.body.appendChild(emergencyOverlay);
+        
+        function updateAlertMode() {
+            alertAnimationFrame++;
+            const flash = alertAnimationFrame % 10 < 5;
+            
+            if (alertMode) {
+                // Flash alert banner
+                alertBanner.style.display = 'flex';
+                alertBanner.style.background = flash ? '#FF0000' : '#DC143C';
+                
+                // Flash panels to red
+                document.querySelectorAll('.panel-header').forEach(header => {
+                    header.style.background = flash ? '#FF0000' : '#8B0000';
+                    header.style.borderBottom = `2px solid #FF0000`;
+                });
+                
+                // Flash overlay
+                emergencyOverlay.style.display = 'flex';
+                emergencyOverlay.style.background = flash ? 'rgba(255, 0, 0, 0.15)' : 'rgba(139, 0, 0, 0.1)';
+                
+                // Update contamination gauge to danger
+                if (contaminationValue && contaminationFill) {
+                    const dangerValue = 67.8 + Math.sin(alertAnimationFrame * 0.1) * 5;
+                    contaminationValue.textContent = `${dangerValue.toFixed(1)}% CRITICAL`;
+                    contaminationValue.style.color = '#FF0000';
+                    contaminationValue.style.animation = 'blink 0.3s infinite';
+                    contaminationFill.style.width = `${dangerValue}%`;
+                    contaminationFill.style.background = '#FF0000';
+                }
+                
+                // Update button
+                alertToggle.style.background = '#FF0000';
+                alertToggle.style.color = '#000';
+                alertToggle.textContent = '▼ CANCEL ALERT ▼';
+                
+                // Show contamination wave
+                const contContainer = document.getElementById('wave-contamination-container');
+                if (contContainer) contContainer.style.display = 'block';
+                
+                requestAnimationFrame(updateAlertMode);
+            } else {
+                // Reset to normal
+                alertBanner.style.display = 'none';
+                emergencyOverlay.style.display = 'none';
+                
+                document.querySelectorAll('.panel-header').forEach(header => {
+                    header.style.background = '';
+                    header.style.borderBottom = '';
+                });
+                
+                if (contaminationValue && contaminationFill) {
+                    contaminationValue.textContent = '12.3% NOMINAL';
+                    contaminationValue.style.color = '#00FF41';
+                    contaminationValue.style.animation = 'none';
+                    contaminationFill.style.width = '12.3%';
+                    contaminationFill.style.background = '#00FF41';
+                }
+                
+                alertToggle.style.background = 'transparent';
+                alertToggle.style.color = '#DC143C';
+                alertToggle.textContent = '▲ TRIGGER ALERT MODE ▲';
+                
+                // Hide contamination wave
+                const contContainer = document.getElementById('wave-contamination-container');
+                if (contContainer) contContainer.style.display = 'none';
+            }
+        }
+        
+        if (alertToggle) {
+            alertToggle.addEventListener('click', () => {
+                alertMode = !alertMode;
+                alertAnimationFrame = 0;
+                updateAlertMode();
+            });
+            
+            // Hover effects
+            alertToggle.addEventListener('mouseenter', () => {
+                if (!alertMode) {
+                    alertToggle.style.background = 'rgba(220, 20, 60, 0.2)';
+                }
+            });
+            alertToggle.addEventListener('mouseleave', () => {
+                if (!alertMode) {
+                    alertToggle.style.background = 'transparent';
+                }
+            });
+        }
+    </script>
+</body>
+</html>

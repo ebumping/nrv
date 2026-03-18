@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>NERV // EVA INTERFACE</title>
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════════════════
+           TRUE EVA INTERFACE - Based on actual show screenshots
+           WHITE on BLACK, with RED/GREEN/CYAN accents
+           Dense information, hexagonal frames, psychographs
+           ═══════════════════════════════════════════════════════════════════════════════ */
+        
+        :root {
+            --eva-black: #000000;
+            --eva-white: #FFFFFF;
+            --eva-text: #CCCCCC;
+            --eva-dim: #666666;
+            --eva-green: #00FF41;
+            --eva-red: #FF0000;
+            --eva-cyan: #00FFFF;
+            --eva-orange: #FF6600;
+            --eva-panel: #0A0A0A;
+            --eva-border: #333333;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--eva-black);
+            color: var(--eva-white);
+            font-family: 'Courier New', 'MS Gothic', monospace;
+            min-height: 100vh;
+        }
+        
+        /* CRT scanlines */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(0,0,0,0.1) 2px,
+                rgba(0,0,0,0.1) 4px
+            );
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           HEADER - Simple red bar
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .header {
+            background: linear-gradient(180deg, #600 0%, var(--eva-black) 100%);
+            border-bottom: 3px solid var(--eva-red);
+            padding: 6px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-title {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 10px;
+            color: var(--eva-white);
+        }
+        
+        .header-title span { color: var(--eva-red); }
+        
+        .header-info {
+            font-size: 10px;
+            color: var(--eva-dim);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           MAIN LAYOUT
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .main {
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            min-height: calc(100vh - 50px);
+        }
+        
+        .column {
+            border-right: 1px solid var(--eva-border);
+            padding: 8px;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           PSYCHOGRAPH - THE signature Eva visual
+           Hexagonal frame with multiple wave channels
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .psychograph {
+            background: var(--eva-black);
+            border: 1px solid var(--eva-white);
+            margin-bottom: 8px;
+            position: relative;
+        }
+        
+        .psychograph-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(255,0,0,0.1);
+            border-bottom: 1px solid var(--eva-border);
+            font-size: 9px;
+        }
+        
+        .psychograph-title {
+            color: var(--eva-white);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .psychograph-title-ja {
+            color: var(--eva-dim);
+            margin-left: 8px;
+        }
+        
+        .psychograph-status {
+            color: var(--eva-green);
+        }
+        
+        .psychograph-status.danger {
+            color: var(--eva-red);
+            animation: blink 0.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        
+        /* Wave channels */
+        .wave-channel {
+            height: 32px;
+            position: relative;
+            border-bottom: 1px solid var(--eva-border);
+            display: flex;
+            align-items: center;
+        }
+        
+        .wave-channel:last-child {
+            border-bottom: none;
+        }
+        
+        .wave-label {
+            position: absolute;
+            left: 8px;
+            font-size: 8px;
+            color: var(--eva-dim);
+            z-index: 2;
+        }
+        
+        .wave-label span {
+            color: var(--eva-green);
+        }
+        
+        .wave-svg {
+            position: absolute;
+            right: 0;
+            width: calc(100% - 60px);
+            height: 100%;
+        }
+        
+        .wave-line {
+            fill: none;
+            stroke: var(--eva-white);
+            stroke-width: 1;
+        }
+        
+        .wave-line.danger {
+            stroke: var(--eva-red);
+        }
+        
+        .wave-line.warning {
+            stroke: var(--eva-orange);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           HEXAGONAL PSYCHOGRAPH FRAME
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .hex-psycho {
+            width: 100%;
+            padding: 12px;
+        }
+        
+        .hex-frame {
+            position: relative;
+            width: 280px;
+            height: 320px;
+            margin: 0 auto;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           SYNC DISPLAY
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .sync-display {
+            text-align: center;
+            padding: 16px;
+            background: var(--eva-black);
+            border: 1px solid var(--eva-white);
+            margin-bottom: 8px;
+        }
+        
+        .sync-value {
+            font-size: 64px;
+            font-weight: bold;
+            color: var(--eva-green);
+            line-height: 1;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .sync-value.danger {
+            color: var(--eva-red);
+            animation: blink 0.5s infinite;
+        }
+        
+        .sync-label {
+            font-size: 10px;
+            color: var(--eva-dim);
+            letter-spacing: 2px;
+            margin-top: 8px;
+        }
+        
+        .sync-label span {
+            color: var(--eva-white);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           SKILL GRAPH - Node-link visualization
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .skill-graph {
+            background: var(--eva-black);
+            border: 1px solid var(--eva-white);
+            margin-bottom: 8px;
+        }
+        
+        .skill-graph-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(255,0,0,0.1);
+            border-bottom: 1px solid var(--eva-border);
+            font-size: 9px;
+        }
+        
+        .skill-graph-title {
+            color: var(--eva-white);
+        }
+        
+        .skill-graph-title span {
+            color: var(--eva-dim);
+        }
+        
+        .skill-graph-stats {
+            color: var(--eva-dim);
+        }
+        
+        .skill-graph-stats span {
+            color: var(--eva-green);
+        }
+        
+        .skill-graph-svg {
+            width: 100%;
+            height: 220px;
+        }
+        
+        .skill-node circle {
+            fill: var(--eva-panel);
+            stroke: var(--eva-white);
+            stroke-width: 1;
+        }
+        
+        .skill-node.active circle {
+            stroke: var(--eva-green);
+            fill: rgba(0, 255, 65, 0.1);
+        }
+        
+        .skill-node.danger circle {
+            stroke: var(--eva-red);
+        }
+        
+        .skill-node text {
+            fill: var(--eva-white);
+            font-size: 6px;
+            font-family: 'Courier New', monospace;
+            text-anchor: middle;
+            dominant-baseline: middle;
+        }
+        
+        .skill-link {
+            stroke: var(--eva-border);
+            stroke-width: 0.5;
+            fill: none;
+        }
+        
+        .skill-link.active {
+            stroke: var(--eva-green);
+            stroke-opacity: 0.5;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           PATTERN INDICATOR
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .pattern-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--eva-black);
+            border: 2px solid var(--eva-cyan);
+            margin-bottom: 8px;
+        }
+        
+        .pattern-dot {
+            width: 16px;
+            height: 16px;
+            background: var(--eva-cyan);
+            animation: pulse-cyan 1s infinite;
+        }
+        
+        @keyframes pulse-cyan {
+            0%, 100% { opacity: 1; box-shadow: 0 0 10px var(--eva-cyan); }
+            50% { opacity: 0.5; box-shadow: 0 0 5px var(--eva-cyan); }
+        }
+        
+        .pattern-text {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: var(--eva-cyan);
+        }
+        
+        .pattern-ja {
+            font-size: 10px;
+            color: var(--eva-cyan);
+            opacity: 0.7;
+        }
+        
+        .pattern-alert {
+            margin-left: auto;
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--eva-red);
+            animation: blink 0.5s infinite;
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           WIREFRAME MAP
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .wireframe-map {
+            background: var(--eva-black);
+            border: 1px solid var(--eva-white);
+            margin-bottom: 8px;
+        }
+        
+        .wireframe-map svg {
+            width: 100%;
+            height: 160px;
+        }
+        
+        .map-footer {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: var(--eva-panel);
+            border-top: 1px solid var(--eva-border);
+            font-size: 8px;
+            color: var(--eva-dim);
+        }
+        
+        .map-footer span {
+            color: var(--eva-green);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           STATUS PANELS
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .status-panel {
+            background: var(--eva-black);
+            border: 1px solid var(--eva-white);
+            margin-bottom: 8px;
+        }
+        
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: rgba(255,0,0,0.1);
+            border-bottom: 1px solid var(--eva-border);
+            font-size: 9px;
+            color: var(--eva-white);
+        }
+        
+        .status-header span {
+            color: var(--eva-dim);
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            padding: 8px;
+        }
+        
+        .status-item {
+            border-left: 2px solid var(--eva-border);
+            padding-left: 6px;
+        }
+        
+        .status-item.active { border-left-color: var(--eva-green); }
+        .status-item.warning { border-left-color: var(--eva-orange); }
+        .status-item.danger { border-left-color: var(--eva-red); }
+        
+        .status-label {
+            font-size: 7px;
+            color: var(--eva-dim);
+            display: flex;
+            gap: 4px;
+        }
+        
+        .status-label span {
+            color: var(--eva-green);
+            font-size: 6px;
+        }
+        
+        .status-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--eva-white);
+        }
+        
+        .status-value.warning { color: var(--eva-orange); }
+        .status-value.danger { color: var(--eva-red); }
+        
+        .status-unit {
+            font-size: 9px;
+            color: var(--eva-dim);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           HEXAGONAL TARGET
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .hex-target {
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .hex-target svg {
+            width: 140px;
+            height: 140px;
+        }
+        
+        .hex-info {
+            margin-top: 8px;
+        }
+        
+        .hex-id {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--eva-white);
+            letter-spacing: 2px;
+        }
+        
+        .hex-distance {
+            font-size: 9px;
+            color: var(--eva-dim);
+            margin-top: 2px;
+        }
+        
+        .hex-status {
+            font-size: 10px;
+            color: var(--eva-green);
+            font-weight: bold;
+            margin-top: 4px;
+        }
+        
+        .hex-status.danger {
+            color: var(--eva-red);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           MAGI
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .magi {
+            background: var(--eva-black);
+            border: 1px solid var(--eva-white);
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .magi-title {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--eva-white);
+            margin-bottom: 4px;
+        }
+        
+        .magi-subtitle {
+            font-size: 8px;
+            color: var(--eva-dim);
+            margin-bottom: 12px;
+        }
+        
+        .magi-nodes {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        
+        .magi-node {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .magi-circle {
+            width: 32px;
+            height: 32px;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .magi-circle::before {
+            content: '';
+            position: absolute;
+            inset: 8px;
+        }
+        
+        .magi-node.caspar .magi-circle { border-color: var(--eva-orange); }
+        .magi-node.caspar .magi-circle::before { 
+            background: var(--eva-orange); 
+            box-shadow: 0 0 8px var(--eva-orange);
+        }
+        
+        .magi-node.melchior .magi-circle { border-color: var(--eva-green); }
+        .magi-node.melchior .magi-circle::before { 
+            background: var(--eva-green); 
+            box-shadow: 0 0 8px var(--eva-green);
+        }
+        
+        .magi-node.balthasar .magi-circle { border-color: var(--eva-cyan); }
+        .magi-node.balthasar .magi-circle::before { 
+            background: var(--eva-cyan); 
+            box-shadow: 0 0 8px var(--eva-cyan);
+        }
+        
+        .magi-name {
+            font-size: 7px;
+            color: var(--eva-dim);
+            margin-top: 4px;
+        }
+        
+        .magi-name-ja {
+            font-size: 6px;
+            margin-top: 2px;
+        }
+        
+        .magi-node.caspar .magi-name-ja { color: var(--eva-orange); }
+        .magi-node.melchior .magi-name-ja { color: var(--eva-green); }
+        .magi-node.balthasar .magi-name-ja { color: var(--eva-cyan); }
+        
+        .magi-vote {
+            font-size: 8px;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+        
+        .magi-result {
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 12px;
+            color: var(--eva-green);
+        }
+        
+        .magi-result.reject {
+            color: var(--eva-red);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           EVENT LOG
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .event-log {
+            background: var(--eva-black);
+            border: 1px solid var(--eva-white);
+            font-size: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 4px 8px;
+        }
+        
+        .log-entry {
+            margin-bottom: 2px;
+        }
+        
+        .log-time {
+            color: var(--eva-dim);
+        }
+        
+        /* ═════════════════════════════════════════════════════════════════
+           DATA STREAM
+           ═════════════════════════════════════════════════════════════════ */
+        
+        .data-stream {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--eva-black);
+            border-top: 2px solid var(--eva-red);
+            padding: 4px 0;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 9px;
+        }
+        
+        .data-stream-content {
+            display: inline-block;
+            color: var(--eva-green);
+            animation: scroll 25s linear infinite;
+        }
+        
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* Rotation animation */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-title">NER<span>V</span></div>
+        <div class="header-info">
+            COMMAND CENTER // 司令センター | SYSTEM: NOMINAL | <span id="clock">00:00:00</span>
+        </div>
+    </header>
+    
+    <!-- MAIN -->
+    <main class="main">
+        <!-- LEFT COLUMN -->
+        <div class="column">
+            <!-- PSYCHOGRAPH - THE signature Eva visual -->
+            <div class="psychograph">
+                <div class="psychograph-header">
+                    <span>
+                        <span class="psychograph-title">PSYCHOGRAPH</span>
+                        <span class="psychograph-title-ja">心理図</span>
+                    </span>
+                    <span class="psychograph-status">ACTIVE</span>
+                </div>
+                
+                <!-- Wave channels -->
+                <div class="wave-channel">
+                    <span class="wave-label">A-10 <span>神経</span></span>
+                    <svg class="wave-svg" viewBox="0 0 200 32" preserveAspectRatio="none">
+                        <path class="wave-line" d="M0,16 Q10,8 20,16 T40,16 T60,16 T80,16 T100,16 T120,16 T140,16 T160,16 T180,16 T200,16">
+                            <animate attributeName="d"
+                                values="M0,16 Q10,8 20,16 T40,16 T60,16 T80,16 T100,16 T120,16 T140,16 T160,16 T180,16 T200,16;
+                                        M0,16 Q10,24 20,16 T40,16 T60,12 T80,20 T100,16 T120,16 T140,16 T160,18 T180,14 T200,16;
+                                        M0,16 Q10,8 20,16 T40,16 T60,16 T80,16 T100,16 T120,16 T140,16 T160,16 T180,16 T200,16"
+                                dur="1.5s" repeatCount="indefinite" />
+                        </path>
+                    </svg>
+                </div>
+                
+                <div class="wave-channel">
+                    <span class="wave-label">PFC <span>前頭葉</span></span>
+                    <svg class="wave-svg" viewBox="0 0 200 32" preserveAspectRatio="none">
+                        <path class="wave-line" d="M0,16 L20,16 L25,6 L30,26 L35,16 L60,16 L65,8 L70,24 L75,16 L100,16 L120,16 L140,16 L160,16 L180,16 L200,16">
+                            <animate attributeName="d"
+                                values="M0,16 L20,16 L25,6 L30,26 L35,16 L60,16 L65,8 L70,24 L75,16 L100,16 L120,16 L140,16 L160,16 L180,16 L200,16;
+                                        M0,16 L20,18 L25,8 L30,24 L35,14 L60,18 L65,10 L70,22 L75,18 L100,16 L120,14 L140,18 L160,16 L180,16 L200,16;
+                                        M0,16 L20,16 L25,6 L30,26 L35,16 L60,16 L65,8 L70,24 L75,16 L100,16 L120,16 L140,16 L160,16 L180,16 L200,16"
+                                dur="1s" repeatCount="indefinite" />
+                        </path>
+                    </svg>
+                </div>
+                
+                <div class="wave-channel">
+                    <span class="wave-label">SYNC <span>同期</span></span>
+                    <svg class="wave-svg" viewBox="0 0 200 32" preserveAspectRatio="none">
+                        <path class="wave-line warning" d="M0,16 L15,16 L20,4 L25,28 L30,16 L45,16 L50,2 L55,30 L60,16 L80,16 L85,6 L90,26 L95,16 L110,16 L200,16">
+                            <animate attributeName="d"
+                                values="M0,16 L15,16 L20,4 L25,28 L30,16 L45,16 L50,2 L55,30 L60,16 L80,16 L85,6 L90,26 L95,16 L110,16 L200,16;
+                                        M0,16 L15,18 L20,6 L25,26 L30,14 L45,18 L50,4 L55,28 L60,14 L80,18 L85,8 L90,24 L95,18 L110,16 L200,16;
+                                        M0,16 L15,14 L20,2 L25,30 L30,18 L45,14 L50,0 L55,32 L60,18 L80,14 L85,4 L90,28 L95,14 L110,16 L200,16"
+                                dur="0.3s" repeatCount="indefinite" />
+                        </path>
+                    </svg>
+                </div>
+                
+                <div class="wave-channel">
+                    <span class="wave-label">EMOTION <span>感情</span></span>
+                    <svg class="wave-svg" viewBox="0 0 200 32" preserveAspectRatio="none">
+                        <path class="wave-line" d="M0,16 Q20,10 40,16 T80,16 T120,16 T160,16 T200,16">
+                            <animate attributeName="d"
+                                values="M0,16 Q20,10 40,16 T80,16 T120,16 T160,16 T200,16;
+                                        M0,16 Q20,22 40,16 T80,16 T120,14 T160,18 T200,16;
+                                        M0,16 Q20,10 40,16 T80,16 T120,16 T160,16 T200,16"
+                                dur="2s" repeatCount="indefinite" />
+                        </path>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- SYNC RATIO -->
+            <div class="sync-display">
+                <div class="sync-value">94.2<span style="font-size:20px">%</span></div>
+                <div class="sync-label">SYNC RATIO // <span>同期率</span></div>
+            </div>
+            
+            <!-- PILOT STATUS -->
+            <div class="status-panel">
+                <div class="status-header">
+                    PILOT STATUS <span>// パイロット</span>
+                </div>
+                <div class="status-grid">
+                    <div class="status-item active">
+                        <div class="status-label">NAME <span>氏名</span></div>
+                        <div class="status-value">IKARI</div>
+                    </div>
+                    <div class="status-item active">
+                        <div class="status-label">UNIT <span>機体</span></div>
+                        <div class="status-value">01</div>
+                    </div>
+                    <div class="status-item warning">
+                        <div class="status-label">PULSE <span>脈拍</span></div>
+                        <div class="status-value warning">118<span class="status-unit">bpm</span></div>
+                    </div>
+                    <div class="status-item active">
+                        <div class="status-label">BP <span>血圧</span></div>
+                        <div class="status-value">125/82</div>
+                    </div>
+                    <div class="status-item warning">
+                        <div class="status-label">POWER <span>電源</span></div>
+                        <div class="status-value warning">3:47</div>
+                    </div>
+                    <div class="status-item active">
+                        <div class="status-label">AT FIELD <span>A.T.場</span></div>
+                        <div class="status-value">OK</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- CENTER COLUMN -->
+        <div class="column" style="display: flex; flex-direction: column;">
+            <!-- PATTERN INDICATOR -->
+            <div class="pattern-indicator">
+                <div class="pattern-dot"></div>
+                <div>
+                    <div class="pattern-text">PATTERN: BLUE</div>
+                    <div class="pattern-ja">パターン青</div>
+                </div>
+                <div class="pattern-alert">▲ ANGEL ▲</div>
+            </div>
+            
+            <!-- SKILL GRAPH -->
+            <div class="skill-graph">
+                <div class="skill-graph-header">
+                    <span class="skill-graph-title">SKILL GRAPH <span>// スキルグラフ</span></span>
+                    <span class="skill-graph-stats">N:<span>12</span> L:<span>18</span> C:<span>94.2%</span></span>
+                </div>
+                <svg class="skill-graph-svg" viewBox="0 0 300 220">
+                    <!-- Links -->
+                    <path class="skill-link active" d="M 60,40 Q 90,20 120,40" />
+                    <path class="skill-link active" d="M 120,40 Q 150,60 180,80" />
+                    <path class="skill-link active" d="M 180,80 Q 210,100 240,120" />
+                    <path class="skill-link active" d="M 60,110 Q 120,90 180,80" />
+                    <path class="skill-link" d="M 60,80 Q 90,60 120,40" />
+                    <path class="skill-link" d="M 120,140 Q 150,110 180,80" />
+                    <path class="skill-link" d="M 60,170 Q 100,100 120,40" />
+                    <path class="skill-link active" d="M 120,40 L 120,80" />
+                    <path class="skill-link active" d="M 120,80 L 180,80" />
+                    <path class="skill-link" d="M 180,40 L 180,80" />
+                    
+                    <!-- Nodes -->
+                    <g class="skill-node active" transform="translate(60, 40)">
+                        <circle r="16" /><text>WEB</text>
+                    </g>
+                    <g class="skill-node active" transform="translate(120, 40)">
+                        <circle r="18" /><text>ANALYZE</text>
+                    </g>
+                    <g class="skill-node" transform="translate(180, 40)">
+                        <circle r="14" /><text>LLM</text>
+                    </g>
+                    <g class="skill-node" transform="translate(240, 40)">
+                        <circle r="12" /><text>EMBED</text>
+                    </g>
+                    
+                    <g class="skill-node" transform="translate(60, 80)">
+                        <circle r="12" /><text>EMBED</text>
+                    </g>
+                    <g class="skill-node active" transform="translate(120, 80)">
+                        <circle r="16" /><text>DERIVE</text>
+                    </g>
+                    <g class="skill-node active" transform="translate(180, 80)">
+                        <circle r="18" /><text>CODE</text>
+                    </g>
+                    <g class="skill-node" transform="translate(240, 80)">
+                        <circle r="12" /><text>FILE</text>
+                    </g>
+                    
+                    <g class="skill-node active" transform="translate(60, 110)">
+                        <circle r="14" /><text>TERM</text>
+                    </g>
+                    <g class="skill-node" transform="translate(120, 110)">
+                        <circle r="12" /><text>VISION</text>
+                    </g>
+                    <g class="skill-node" transform="translate(180, 110)">
+                        <circle r="12" /><text>TEST</text>
+                    </g>
+                    <g class="skill-node active" transform="translate(240, 120)">
+                        <circle r="16" /><text>WRITE</text>
+                    </g>
+                    
+                    <g class="skill-node" transform="translate(60, 170)">
+                        <circle r="10" /><text>AUTH</text>
+                    </g>
+                    <g class="skill-node danger" transform="translate(120, 170)">
+                        <circle r="12" /><text>CLAIM</text>
+                    </g>
+                    <g class="skill-node" transform="translate(180, 170)">
+                        <circle r="10" /><text>HOOK</text>
+                    </g>
+                </svg>
+            </div>
+            
+            <!-- WIREFRAME MAP -->
+            <div class="wireframe-map">
+                <svg viewBox="0 0 300 160" preserveAspectRatio="xMidYMid slice">
+                    <!-- Grid -->
+                    <g stroke="#333" stroke-width="0.3">
+                        <line x1="150" y1="10" x2="30" y2="160" />
+                        <line x1="150" y1="10" x2="90" y2="160" />
+                        <line x1="150" y1="10" x2="150" y2="160" />
+                        <line x1="150" y1="10" x2="210" y2="160" />
+                        <line x1="150" y1="10" x2="270" y2="160" />
+                        <line x1="20" y1="40" x2="280" y2="40" />
+                        <line x1="10" y1="80" x2="290" y2="80" />
+                        <line x1="0" y1="120" x2="300" y2="120" />
+                    </g>
+                    
+                    <!-- Contours -->
+                    <g fill="none" stroke="#00FF41" stroke-width="0.5" opacity="0.2">
+                        <path d="M 30 60 Q 80 55 130 65 T 230 60 T 280 65" />
+                        <path d="M 20 100 Q 70 90 120 105 T 220 95 T 280 105" />
+                    </g>
+                    
+                    <!-- EVA-01 -->
+                    <circle cx="200" cy="90" r="4" fill="#00FF41" />
+                    <text x="210" y="94" fill="#00FF41" font-size="7">EVA-01</text>
+                    
+                    <!-- Target -->
+                    <circle cx="100" cy="50" r="5" fill="#FF0000">
+                        <animate attributeName="r" values="5;8;5" dur="0.5s" repeatCount="indefinite" />
+                    </circle>
+                    <circle cx="100" cy="50" r="10" fill="none" stroke="#FF0000" stroke-width="1">
+                        <animate attributeName="r" values="10;18;10" dur="0.5s" repeatCount="indefinite" />
+                        <animate attributeName="opacity" values="0.8;0;0.8" dur="0.5s" repeatCount="indefinite" />
+                    </circle>
+                    <text x="108" y="54" fill="#FF0000" font-size="7">TARGET</text>
+                </svg>
+                <div class="map-footer">
+                    AREA: TOKYO-3 | GRID: <span>47-K</span> | 1:50000
+                </div>
+            </div>
+            
+            <!-- EVENT LOG -->
+            <div class="event-log" style="flex: 1; overflow-y: auto;">
+                <div class="log-entry"><span class="log-time">[14:32:07]</span> SYSTEM ONLINE</div>
+                <div class="log-entry" style="color: var(--eva-green);"><span class="log-time">[14:32:15]</span> MAGI LINK ESTABLISHED</div>
+                <div class="log-entry" style="color: var(--eva-cyan);"><span class="log-time">[14:33:02]</span> PATTERN BLUE DETECTED</div>
+                <div class="log-entry" style="color: var(--eva-red);"><span class="log-time">[14:33:18]</span> ▲ ANGEL APPROACHING ▲</div>
+                <div class="log-entry" style="color: var(--eva-green);"><span class="log-time">[14:34:01]</span> EVA-01 LAUNCH</div>
+                <div class="log-entry" style="color: var(--eva-orange);"><span class="log-time">[14:35:22]</span> TARGET LOCK</div>
+                <div class="log-entry"><span class="log-time">[14:36:00]</span> AWAITING COMMAND...</div>
+            </div>
+        </div>
+        
+        <!-- RIGHT COLUMN -->
+        <div class="column">
+            <!-- HEXAGONAL TARGET -->
+            <div class="status-panel">
+                <div class="status-header">TARGET LOCK <span>// 目標補足</span></div>
+                <div class="hex-target">
+                    <svg viewBox="0 0 140 140">
+                        <!-- Main hexagon (flat-top) -->
+                        <polygon points="70,15 115,37.5 115,102.5 70,125 25,102.5 25,37.5" 
+                                 fill="none" stroke="var(--eva-white)" stroke-width="2" />
+                        
+                        <!-- Rotating reticle -->
+                        <g style="transform-origin: 70px 70px; animation: rotate 6s linear infinite;">
+                            <polygon points="70,28 100,45 100,95 70,112 40,95 40,45" 
+                                     fill="none" stroke="var(--eva-green)" stroke-width="1" stroke-dasharray="4,2" />
+                        </g>
+                        
+                        <!-- Crosshair -->
+                        <line x1="60" y1="70" x2="80" y2="70" stroke="var(--eva-green)" stroke-width="1" />
+                        <line x1="70" y1="60" x2="70" y2="80" stroke="var(--eva-green)" stroke-width="1" />
+                        <circle cx="70" cy="70" r="3" fill="var(--eva-green)" opacity="0.8" />
+                        
+                        <!-- Brackets -->
+                        <path d="M 25 45 L 25 37.5 L 32.5 37.5" fill="none" stroke="var(--eva-white)" stroke-width="1.5" />
+                        <path d="M 107.5 37.5 L 115 37.5 L 115 45" fill="none" stroke="var(--eva-white)" stroke-width="1.5" />
+                        <path d="M 25 95 L 25 102.5 L 32.5 102.5" fill="none" stroke="var(--eva-white)" stroke-width="1.5" />
+                        <path d="M 107.5 102.5 L 115 102.5 L 115 95" fill="none" stroke="var(--eva-white)" stroke-width="1.5" />
+                    </svg>
+                    <div class="hex-info">
+                        <div class="hex-id">ANGEL-04</div>
+                        <div class="hex-distance">DIST: 2,847m | BRG: 047°</div>
+                        <div class="hex-status">TRACKING // 追跡中</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- MAGI -->
+            <div class="magi">
+                <div class="magi-title">MAGI DECISION</div>
+                <div class="magi-subtitle">三種の決定</div>
+                <div class="magi-nodes">
+                    <div class="magi-node caspar">
+                        <div class="magi-circle"></div>
+                        <span class="magi-name">CASPAR</span>
+                        <span class="magi-name-ja">論理</span>
+                        <span class="magi-vote" style="color: var(--eva-orange);">賛成</span>
+                    </div>
+                    <div class="magi-node melchior">
+                        <div class="magi-circle"></div>
+                        <span class="magi-name">MELCHIOR</span>
+                        <span class="magi-name-ja">科学</span>
+                        <span class="magi-vote" style="color: var(--eva-green);">賛成</span>
+                    </div>
+                    <div class="magi-node balthasar">
+                        <div class="magi-circle"></div>
+                        <span class="magi-name">BALTHASAR</span>
+                        <span class="magi-name-ja">感情</span>
+                        <span class="magi-vote" style="color: var(--eva-cyan);">賛成</span>
+                    </div>
+                </div>
+                <div class="magi-result">承認 // APPROVED</div>
+            </div>
+            
+            <!-- RESOURCES -->
+            <div class="status-panel">
+                <div class="status-header">RESOURCES <span>// 資源</span></div>
+                <div class="status-grid">
+                    <div class="status-item warning">
+                        <div class="status-label">BATTERY <span>電池</span></div>
+                        <div class="status-value warning">47<span class="status-unit">%</span></div>
+                    </div>
+                    <div class="status-item active">
+                        <div class="status-label">LCL <span>温度</span></div>
+                        <div class="status-value">28.4<span class="status-unit">°C</span></div>
+                    </div>
+                    <div class="status-item active">
+                        <div class="status-label">O2 <span>酸素</span></div>
+                        <div class="status-value">21.4<span class="status-unit">%</span></div>
+                    </div>
+                    <div class="status-item warning">
+                        <div class="status-label">PRESS <span>気圧</span></div>
+                        <div class="status-value warning">0.87<span class="status-unit">ATM</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- DATA STREAM -->
+    <div class="data-stream">
+        <div class="data-stream-content">
+            SYNC:94.2% | PATTERN:BLUE | TARGET:LOCK | DIST:2847m | BRG:047° | BATT:47% | O2:21.4% | AT:STABLE | PILOT:IKARI | UNIT:01 | ANGEL:04 | MAGI:OK | CONF:94.2% | SYNC:94.2% | PATTERN:BLUE | TARGET:LOCK | DIST:2847m | BRG:047° | BATT:47% | O2:21.4% | AT:STABLE | PILOT:IKARI | UNIT:01 | ANGEL:04 | MAGI:OK | CONF:94.2%
+        </div>
+    </div>
+    
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                String(now.getHours()).padStart(2,'0') + ':' +
+                String(now.getMinutes()).padStart(2,'0') + ':' +
+                String(now.getSeconds()).padStart(2,'0');
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>NERV // 司令センター</title>
+    <!-- M+ 2m Japanese font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #FF0000;
+            --crimson: #DC143C;
+            --crimson-dark: #8B0000;
+            --white: #FFFFFF;
+            --text: #CCCCCC;
+            --dim: #444444;
+            --green: #00FF41;
+            --cyan: #00FFFF;
+            --orange: #FF6A00;
+            --yellow: #FFFF00;
+            --black: #000000;
+            --panel: #0A0A0A;
+            --border: #1A1A1A;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @font-face {
+            font-family: 'MPLUS';
+            src: url('https://fonts.gstatic.com/s/mplus2/v2/7AuCp_BtzRxHST28XW6HnfbkFc5WPG3.woff2') format('woff2');
+        }
+        
+        body {
+            background: var(--black);
+            color: var(--white);
+            font-family: 'M PLUS 2', 'Courier New', 'MS Gothic', monospace;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Hexagonal background pattern */
+        .hex-bg {
+            position: fixed;
+            inset: 0;
+            opacity: 0.08;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='46' viewBox='0 0 40 46'%3E%3Cpolygon points='20,0 40,11.5 40,34.5 20,46 0,34.5 0,11.5' fill='none' stroke='%23333' stroke-width='0.5'/%3E%3C/svg%3E");
+            z-index: 0;
+        }
+        
+        /* CRT Effects */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(0deg, transparent 0px, transparent 1px, rgba(0,0,0,0.25) 1px, rgba(0,0,0,0.25) 2px);
+            pointer-events: none;
+            z-index: 10000;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 25%, rgba(0,0,0,0.7) 100%);
+            pointer-events: none;
+            z-index: 9999;
+        }
+        
+        /* Moving scan line */
+        .scan-line {
+            position: fixed;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,106,0,0.15), transparent);
+            animation: scan-down 6s linear infinite;
+            pointer-events: none;
+            z-index: 10001;
+        }
+        @keyframes scan-down { 0% { top: -2px; } 100% { top: 100%; } }
+        
+        /* Main Grid */
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-rows: 44px 1fr 28px;
+            z-index: 1;
+        }
+        
+        /* HEADER */
+        .header {
+            background: linear-gradient(180deg, var(--crimson-dark) 0%, var(--black) 100%);
+            border-bottom: 2px solid var(--red);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: relative;
+        }
+        .header::before, .header::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: var(--dim);
+        }
+        .header::before { left: 140px; }
+        .header::after { right: 180px; }
+        
+        .logo { font-size: 26px; font-weight: 700; letter-spacing: 6px; }
+        .logo span { color: var(--red); }
+        .subtitle { margin-left: 32px; font-size: 9px; color: var(--dim); letter-spacing: 1px; }
+        
+        .header-status { margin-left: auto; display: flex; gap: 20px; font-size: 8px; }
+        .hs-item { display: flex; gap: 4px; }
+        .hs-label { color: var(--dim); }
+        .hs-value { color: var(--green); }
+        .hs-value.cyan { color: var(--cyan); }
+        .hs-value.red { color: var(--red); animation: blink 0.4s step-end infinite; }
+        
+        @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+        
+        /* MAIN LAYOUT */
+        .main {
+            display: grid;
+            grid-template-columns: 240px 1fr 240px;
+            gap: 1px;
+            padding: 1px;
+            background: var(--border);
+        }
+        
+        .col { display: flex; flex-direction: column; gap: 1px; background: var(--black); }
+        
+        /* PANEL WITH ANGULAR CORNERS */
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+        .panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: 8px solid transparent;
+            border-top-color: var(--black);
+            border-left-color: var(--black);
+            z-index: 2;
+        }
+        .panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            border: 8px solid transparent;
+            border-top-color: var(--black);
+            border-right-color: var(--black);
+            z-index: 2;
+        }
+        
+        .panel-hdr {
+            background: linear-gradient(90deg, rgba(100,0,0,0.5), transparent);
+            border-bottom: 1px solid var(--red);
+            padding: 2px 6px;
+            font-size: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-title { color: var(--white); font-weight: 700; letter-spacing: 1px; }
+        .panel-title-ja { color: var(--dim); margin-left: 6px; font-size: 7px; }
+        .panel-status { font-size: 7px; padding: 1px 4px; }
+        .panel-status.ok { background: rgba(0,255,65,0.15); color: var(--green); }
+        .panel-status.warn { background: rgba(255,106,0,0.15); color: var(--orange); }
+        .panel-status.alert { background: rgba(255,0,0,0.15); color: var(--red); animation: blink 0.4s infinite; }
+        
+        .panel-body { padding: 3px; height: calc(100% - 18px); overflow: hidden; }
+        
+        /* DENSE STATUS GRID */
+        .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; }
+        
+        .stat-cell {
+            border: 1px solid var(--border);
+            padding: 2px 3px;
+            position: relative;
+            background: rgba(0,0,0,0.3);
+        }
+        .stat-cell::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+        .stat-cell.ok::before { background: var(--green); }
+        .stat-cell.warn::before { background: var(--orange); }
+        .stat-cell.alert::before { background: var(--red); }
+        
+        .stat-lbl { font-size: 5px; color: var(--dim); display: flex; justify-content: space-between; }
+        .stat-lbl span { color: var(--green); font-size: 4px; }
+        .stat-val { font-size: 11px; font-weight: 700; color: var(--white); }
+        .stat-val.ok { color: var(--green); }
+        .stat-val.warn { color: var(--orange); }
+        .stat-val.alert { color: var(--red); }
+        .stat-unit { font-size: 6px; color: var(--dim); font-weight: 400; }
+        
+        /* PSYCHOGRAPH */
+        .psychograph { display: flex; flex-direction: column; height: 100%; }
+        
+        .wave-row {
+            flex: 1;
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            min-height: 22px;
+        }
+        .wave-row:last-child { border-bottom: none; }
+        
+        .wave-lbl {
+            width: 44px;
+            padding: 1px 2px;
+            border-right: 1px solid var(--border);
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .wave-lbl-en { font-size: 6px; color: var(--white); }
+        .wave-lbl-ja { font-size: 5px; color: var(--green); }
+        
+        .wave-viz { flex: 1; position: relative; }
+        .wave-viz svg { width: 100%; height: 100%; }
+        .wave-line { fill: none; stroke-width: 1; }
+        .wave-line.norm { stroke: var(--white); }
+        .wave-line.warn { stroke: var(--orange); }
+        .wave-line.alert { stroke: var(--red); }
+        
+        /* SYNC DISPLAY */
+        .sync-dsp { text-align: center; padding: 6px; }
+        .sync-val { font-size: 42px; font-weight: 700; color: var(--green); line-height: 1; }
+        .sync-val.alert { color: var(--red); animation: blink 0.3s infinite; }
+        .sync-lbl { font-size: 7px; color: var(--dim); letter-spacing: 1px; margin-top: 2px; }
+        .sync-bar { display: flex; gap: 1px; margin-top: 6px; height: 3px; }
+        .sync-seg { flex: 1; background: var(--border); }
+        .sync-seg.ok { background: var(--green); }
+        .sync-seg.warn { background: var(--orange); }
+        .sync-seg.alert { background: var(--red); animation: blink 0.3s infinite; }
+        
+        /* HEX SKILL CLUSTER */
+        .hex-cluster { position: relative; width: 100%; height: 100%; }
+        
+        .hex-cell {
+            position: absolute;
+            width: 32px;
+            height: 28px;
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .hex-cell.ok { background: rgba(0,255,65,0.08); border-color: var(--green); }
+        .hex-cell.warn { background: rgba(255,106,0,0.08); border-color: var(--orange); }
+        .hex-cell.alert { background: rgba(255,0,0,0.08); border-color: var(--red); }
+        .hex-lbl { font-size: 4px; color: var(--dim); }
+        .hex-val { font-size: 6px; font-weight: 700; color: var(--white); }
+        .hex-val.ok { color: var(--green); }
+        
+        /* PATTERN BAR */
+        .pattern-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            background: var(--black);
+            border: 2px solid var(--cyan);
+        }
+        .pattern-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--cyan);
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 8px var(--cyan)} 50%{opacity:0.5;box-shadow:0 0 4px var(--cyan)} }
+        .pattern-txt { font-size: 13px; font-weight: 700; letter-spacing: 2px; color: var(--cyan); }
+        .pattern-ja { font-size: 8px; color: var(--cyan); opacity: 0.6; }
+        .pattern-alert { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--red); animation: blink 0.4s infinite; }
+        
+        /* WIREFRAME MAP */
+        .wireframe { position: relative; width: 100%; height: 100%; }
+        .wireframe svg { width: 100%; height: 100%; }
+        .map-info {
+            position: absolute;
+            bottom: 2px;
+            left: 2px;
+            right: 2px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 5px;
+            color: var(--dim);
+        }
+        .map-info span { color: var(--green); }
+        
+        /* HEX TARGET */
+        .hex-target { position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        .hex-target svg { width: 85%; height: 85%; }
+        .tgt-info { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; }
+        .tgt-id { font-size: 10px; font-weight: 700; color: var(--white); letter-spacing: 1px; }
+        .tgt-dist { font-size: 6px; color: var(--dim); margin-top: 1px; }
+        .tgt-sts { font-size: 7px; color: var(--green); font-weight: 700; margin-top: 1px; }
+        
+        /* MAGI */
+        .magi-dsp { text-align: center; padding: 4px; }
+        .magi-title { font-size: 8px; letter-spacing: 1px; color: var(--white); margin-bottom: 1px; }
+        .magi-sub { font-size: 6px; color: var(--dim); margin-bottom: 6px; }
+        .magi-nodes { display: flex; justify-content: center; gap: 8px; }
+        .magi-node { display: flex; flex-direction: column; align-items: center; }
+        .magi-circle {
+            width: 24px;
+            height: 24px;
+            border: 2px solid;
+            border-radius: 50%;
+            position: relative;
+        }
+        .magi-circle::before {
+            content: '';
+            position: absolute;
+            inset: 6px;
+            border-radius: 50%;
+        }
+        .magi-node.caspar .magi-circle { border-color: var(--orange); }
+        .magi-node.caspar .magi-circle::before { background: var(--orange); box-shadow: 0 0 6px var(--orange); }
+        .magi-node.melchior .magi-circle { border-color: var(--green); }
+        .magi-node.melchior .magi-circle::before { background: var(--green); box-shadow: 0 0 6px var(--green); }
+        .magi-node.balthasar .magi-circle { border-color: var(--cyan); }
+        .magi-node.balthasar .magi-circle::before { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+        .magi-name { font-size: 5px; color: var(--dim); margin-top: 2px; }
+        .magi-name-ja { font-size: 4px; margin-top: 1px; }
+        .magi-node.caspar .magi-name-ja { color: var(--orange); }
+        .magi-node.melchior .magi-name-ja { color: var(--green); }
+        .magi-node.balthasar .magi-name-ja { color: var(--cyan); }
+        .magi-vote { font-size: 6px; font-weight: 700; margin-top: 1px; }
+        .magi-result { font-size: 9px; font-weight: 700; margin-top: 8px; color: var(--green); }
+        .magi-result.reject { color: var(--red); }
+        
+        /* EVENT LOG */
+        .log { font-size: 5px; height: 100%; overflow-y: auto; }
+        .log-entry { display: flex; gap: 3px; margin-bottom: 1px; }
+        .log-time { color: var(--dim); }
+        
+        /* FOOTER */
+        .footer {
+            background: var(--black);
+            border-top: 2px solid var(--red);
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+        }
+        .data-stream {
+            white-space: nowrap;
+            font-size: 7px;
+            color: var(--green);
+            animation: scroll 18s linear infinite;
+        }
+        @keyframes scroll { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        
+        @keyframes rotate { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    </style>
+</head>
+<body>
+    <div class="hex-bg"></div>
+    <div class="scan-line"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="logo">NER<span>V</span></div>
+            <div class="subtitle">司令センター // COMMAND CENTER</div>
+            <div class="header-status">
+                <div class="hs-item"><span class="hs-label">SYS:</span><span class="hs-value">NOMINAL</span></div>
+                <div class="hs-item"><span class="hs-label">PTN:</span><span class="hs-value cyan">BLUE</span></div>
+                <div class="hs-item"><span class="hs-label">ALRT:</span><span class="hs-value red">ACTIVE</span></div>
+                <div class="hs-item"><span class="hs-label">TIME:</span><span class="hs-value" id="clk">00:00:00</span></div>
+            </div>
+        </header>
+        
+        <main class="main">
+            <!-- LEFT COL -->
+            <div class="col">
+                <div class="panel" style="flex:1.8">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">PSYCHOGRAPH</span><span class="panel-title-ja">心理図</span></span>
+                        <span class="panel-status ok">ACTIVE</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="psychograph">
+                            <div class="wave-row">
+                                <div class="wave-lbl"><span class="wave-lbl-en">A-10</span><span class="wave-lbl-ja">神経</span></div>
+                                <div class="wave-viz">
+                                    <svg viewBox="0 0 160 22" preserveAspectRatio="none">
+                                        <path class="wave-line norm" d="M0,11 Q12,5 24,11 T48,11 T72,11 T96,11 T120,11 T144,11 T160,11">
+                                            <animate attributeName="d" values="M0,11 Q12,5 24,11 T48,11 T72,11 T96,11 T120,11 T144,11 T160,11;M0,11 Q12,17 24,11 T48,11 T72,9 T96,13 T120,11 T144,11 T160,11;M0,11 Q12,5 24,11 T48,11 T72,11 T96,11 T120,11 T144,11 T160,11" dur="1.2s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="wave-row">
+                                <div class="wave-lbl"><span class="wave-lbl-en">PFC</span><span class="wave-lbl-ja">前頭葉</span></div>
+                                <div class="wave-viz">
+                                    <svg viewBox="0 0 160 22" preserveAspectRatio="none">
+                                        <path class="wave-line norm" d="M0,11 L16,11 L20,3 L24,19 L28,11 L48,11 L52,5 L56,17 L60,11 L80,11 L100,11 L120,11 L140,11 L160,11">
+                                            <animate attributeName="d" values="M0,11 L16,11 L20,3 L24,19 L28,11 L48,11 L52,5 L56,17 L60,11 L80,11 L100,11 L120,11 L140,11 L160,11;M0,11 L16,13 L20,5 L24,17 L28,9 L48,13 L52,7 L56,15 L60,13 L80,11 L100,9 L120,13 L140,11 L160,11;M0,11 L16,11 L20,3 L24,19 L28,11 L48,11 L52,5 L56,17 L60,11 L80,11 L100,11 T120,11 T140,11 T160,11" dur="0.8s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="wave-row">
+                                <div class="wave-lbl"><span class="wave-lbl-en">SYNC</span><span class="wave-lbl-ja">同期</span></div>
+                                <div class="wave-viz">
+                                    <svg viewBox="0 0 160 22" preserveAspectRatio="none">
+                                        <path class="wave-line warn" d="M0,11 L12,11 L16,1 L20,21 L24,11 L36,11 L40,-1 L44,23 L48,11 L64,11 L68,3 L72,19 L76,11 L88,11 L100,11 L120,11 L140,11 L160,11">
+                                            <animate attributeName="d" values="M0,11 L12,11 L16,1 L20,21 L24,11 L36,11 L40,-1 L44,23 L48,11 L64,11 L68,3 L72,19 L76,11 L88,11 L100,11 L120,11 L140,11 L160,11;M0,11 L12,13 L16,3 L20,19 L24,9 L36,13 L40,1 L44,21 L48,9 L64,13 L68,5 L72,17 L76,13 L88,11 L100,9 L120,13 L140,11 L160,11;M0,11 L12,9 L16,-1 L20,23 L24,13 L36,9 L40,-3 L44,25 L48,13 L64,9 L68,1 L72,21 L76,9 L88,11 L100,13 L120,9 L140,11 L160,11" dur="0.25s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="wave-row">
+                                <div class="wave-lbl"><span class="wave-lbl-en">EMOT</span><span class="wave-lbl-ja">感情</span></div>
+                                <div class="wave-viz">
+                                    <svg viewBox="0 0 160 22" preserveAspectRatio="none">
+                                        <path class="wave-line norm" d="M0,11 Q20,7 40,11 T80,11 T120,11 T160,11">
+                                            <animate attributeName="d" values="M0,11 Q20,7 40,11 T80,11 T120,11 T160,11;M0,11 Q20,15 40,11 T80,11 T120,9 T160,13;M0,11 Q20,7 40,11 T80,11 T120,11 T160,11" dur="1.8s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="wave-row">
+                                <div class="wave-lbl"><span class="wave-lbl-en">THAL</span><span class="wave-lbl-ja">視床</span></div>
+                                <div class="wave-viz">
+                                    <svg viewBox="0 0 160 22" preserveAspectRatio="none">
+                                        <path class="wave-line norm" d="M0,11 Q8,8 16,11 T32,11 T48,11 T64,11 T80,11 T96,11 T112,11 T128,11 T144,11 T160,11">
+                                            <animate attributeName="d" values="M0,11 Q8,8 16,11 T32,11 T48,11 T64,11 T80,11 T96,11 T112,11 T128,11 T144,11 T160,11;M0,11 Q8,14 16,11 T32,11 T48,9 T64,13 T80,11 T96,11 T112,11 T128,11 T144,11 T160,11;M0,11 Q8,8 16,11 T32,11 T48,11 T64,11 T80,11 T96,11 T112,11 T128,11 T144,11 T160,11" dur="0.7s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="wave-row">
+                                <div class="wave-lbl"><span class="wave-lbl-en">HIPP</span><span class="wave-lbl-ja">海馬</span></div>
+                                <div class="wave-viz">
+                                    <svg viewBox="0 0 160 22" preserveAspectRatio="none">
+                                        <path class="wave-line ok" d="M0,11 L20,11 L24,5 L28,17 L32,11 L52,11 L56,6 L60,16 L64,11 L84,11 L88,8 L92,14 L96,11 L116,11 L120,9 L124,13 L128,11 L160,11">
+                                            <animate attributeName="d" values="M0,11 L20,11 L24,5 L28,17 L32,11 L52,11 L56,6 L60,16 L64,11 L84,11 L88,8 L92,14 L96,11 L116,11 L120,9 L124,13 L128,11 L160,11;M0,11 L20,13 L24,7 L28,15 L32,13 L52,11 L56,8 L60,14 L64,13 L84,11 L88,10 L92,12 L96,11 L116,13 L120,11 L124,15 L128,13 L160,11;M0,11 L20,11 L24,5 L28,17 L32,11 L52,11 L56,6 L60,16 L64,11 L84,11 L88,8 L92,14 L96,11 L116,11 L120,9 L124,13 L128,11 L160,11" dur="0.5s" repeatCount="indefinite"/>
+                                        </path>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="flex:0.8">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">SYNC RATIO</span><span class="panel-title-ja">同期率</span></span>
+                        <span class="panel-status ok">94.2%</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="sync-dsp">
+                            <div class="sync-val">94.2<span style="font-size:14px">%</span></div>
+                            <div class="sync-lbl">SYNC // 同期率</div>
+                            <div class="sync-bar">
+                                <div class="sync-seg ok"></div>
+                                <div class="sync-seg ok"></div>
+                                <div class="sync-seg ok"></div>
+                                <div class="sync-seg ok"></div>
+                                <div class="sync-seg ok"></div>
+                                <div class="sync-seg ok"></div>
+                                <div class="sync-seg ok"></div>
+                                <div class="sync-seg ok warn"></div>
+                                <div class="sync-seg warn"></div>
+                                <div class="sync-seg"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="flex:1.2">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">PILOT STATUS</span><span class="panel-title-ja">パイロット</span></span>
+                        <span class="panel-status ok">ACTIVE</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="stat-grid">
+                            <div class="stat-cell ok"><div class="stat-lbl">NAME <span>氏名</span></div><div class="stat-val">IKARI</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">UNIT <span>機体</span></div><div class="stat-val">01</div></div>
+                            <div class="stat-cell warn"><div class="stat-lbl">PULSE <span>脈拍</span></div><div class="stat-val warn">118<span class="stat-unit">bpm</span></div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">BP <span>血圧</span></div><div class="stat-val">125/82</div></div>
+                            <div class="stat-cell warn"><div class="stat-lbl">PWR <span>電源</span></div><div class="stat-val warn">3:47</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">AT FLD <span>A.T.場</span></div><div class="stat-val ok">OK</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">LCL-T <span>温度</span></div><div class="stat-val">28.4<span class="stat-unit">°C</span></div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">O2 <span>酸素</span></div><div class="stat-val">21.4<span class="stat-unit">%</span></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- CENTER COL -->
+            <div class="col">
+                <div class="pattern-bar">
+                    <div class="pattern-dot"></div>
+                    <div>
+                        <div class="pattern-txt">PATTERN: BLUE</div>
+                        <div class="pattern-ja">パターン青</div>
+                    </div>
+                    <div class="pattern-alert">▲ ANGEL ▲</div>
+                </div>
+                
+                <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:1px;">
+                    <div class="panel">
+                        <div class="panel-hdr">
+                            <span><span class="panel-title">TACTICAL MAP</span><span class="panel-title-ja">戦術地図</span></span>
+                            <span class="panel-status ok">TRK</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="wireframe">
+                                <svg viewBox="0 0 180 120" preserveAspectRatio="xMidYMid slice">
+                                    <g stroke="var(--dim)" stroke-width="0.3" fill="none">
+                                        <line x1="90" y1="5" x2="20" y2="120"/><line x1="90" y1="5" x2="50" y2="120"/>
+                                        <line x1="90" y1="5" x2="90" y2="120"/><line x1="90" y1="5" x2="130" y2="120"/>
+                                        <line x1="90" y1="5" x2="160" y2="120"/>
+                                        <line x1="10" y1="25" x2="170" y2="25"/><line x1="5" y1="60" x2="175" y2="60"/>
+                                        <line x1="0" y1="95" x2="180" y2="95"/>
+                                    </g>
+                                    <g fill="none" stroke="var(--green)" stroke-width="0.4" opacity="0.25">
+                                        <path d="M20,40 Q50,35 80,45 T140,40"/><path d="M15,75 Q45,65 75,80 T135,70"/>
+                                    </g>
+                                    <circle cx="125" cy="60" r="3" fill="var(--green)"/>
+                                    <text x="132" y="63" fill="var(--green)" font-size="5">01</text>
+                                    <circle cx="55" cy="35" r="4" fill="var(--red)">
+                                        <animate attributeName="r" values="4;6;4" dur="0.4s" repeatCount="indefinite"/>
+                                    </circle>
+                                    <circle cx="55" cy="35" r="7" fill="none" stroke="var(--red)" stroke-width="0.5">
+                                        <animate attributeName="r" values="7;12;7" dur="0.4s" repeatCount="indefinite"/>
+                                        <animate attributeName="opacity" values="0.8;0;0.8" dur="0.4s" repeatCount="indefinite"/>
+                                    </circle>
+                                    <text x="62" y="38" fill="var(--red)" font-size="5">TGT</text>
+                                </svg>
+                                <div class="map-info">TOKYO-3 | <span>47-K</span> | 1:50K</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="panel">
+                        <div class="panel-hdr">
+                            <span><span class="panel-title">TARGET LOCK</span><span class="panel-title-ja">目標補足</span></span>
+                            <span class="panel-status ok">LOCK</span>
+                        </div>
+                        <div class="panel-body">
+                            <div class="hex-target">
+                                <svg viewBox="0 0 120 100">
+                                    <polygon points="60,8 105,32 105,68 60,92 15,68 15,32" fill="none" stroke="var(--white)" stroke-width="1.5"/>
+                                    <g style="transform-origin:60px 50px;animation:rotate 6s linear infinite">
+                                        <polygon points="60,20 90,37 90,63 60,80 30,63 30,37" fill="none" stroke="var(--green)" stroke-width="0.7" stroke-dasharray="2,1"/>
+                                    </g>
+                                    <line x1="52" y1="50" x2="68" y2="50" stroke="var(--green)" stroke-width="0.8"/>
+                                    <line x1="60" y1="42" x2="60" y2="58" stroke="var(--green)" stroke-width="0.8"/>
+                                    <circle cx="60" cy="50" r="1.5" fill="var(--green)"/>
+                                    <path d="M15,32 L15,28 L20,28" fill="none" stroke="var(--white)" stroke-width="1"/>
+                                    <path d="M100,28 L105,28 L105,32" fill="none" stroke="var(--white)" stroke-width="1"/>
+                                    <path d="M15,68 L15,72 L20,72" fill="none" stroke="var(--white)" stroke-width="1"/>
+                                    <path d="M100,72 L105,72 L105,68" fill="none" stroke="var(--white)" stroke-width="1"/>
+                                </svg>
+                                <div class="tgt-info">
+                                    <div class="tgt-id">ANGEL-04</div>
+                                    <div class="tgt-dist">D:2,847m B:047°</div>
+                                    <div class="tgt-sts">TRK // 追跡中</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="flex:1">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">SKILL GRAPH</span><span class="panel-title-ja">スキルグラフ</span></span>
+                        <span class="panel-status ok">N:12 L:18 C:94%</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="hex-cluster">
+                            <div class="hex-cell ok" style="left:85px;top:2px"><span class="hex-lbl">WEB</span><span class="hex-val ok">OK</span></div>
+                            <div class="hex-cell ok" style="left:50px;top:24px"><span class="hex-lbl">EMB</span><span class="hex-val ok">OK</span></div>
+                            <div class="hex-cell" style="left:120px;top:24px"><span class="hex-lbl">LLM</span><span class="hex-val">OK</span></div>
+                            <div class="hex-cell ok" style="left:15px;top:46px"><span class="hex-lbl">RSRC</span><span class="hex-val">8</span></div>
+                            <div class="hex-cell ok" style="left:85px;top:46px"><span class="hex-lbl">ANLYZ</span><span class="hex-val ok">OK</span></div>
+                            <div class="hex-cell" style="left:155px;top:46px"><span class="hex-lbl">FILE</span><span class="hex-val">OK</span></div>
+                            <div class="hex-cell ok" style="left:50px;top:68px"><span class="hex-lbl">TERM</span><span class="hex-val ok">OK</span></div>
+                            <div class="hex-cell ok" style="left:120px;top:68px"><span class="hex-lbl">CODE</span><span class="hex-val ok">OK</span></div>
+                            <div class="hex-cell warn" style="left:15px;top:90px"><span class="hex-lbl">TEST</span><span class="hex-val">78%</span></div>
+                            <div class="hex-cell ok" style="left:85px;top:90px"><span class="hex-lbl">CHAIN</span><span class="hex-val ok">OK</span></div>
+                            <div class="hex-cell ok" style="left:155px;top:90px"><span class="hex-lbl">WRT</span><span class="hex-val ok">OK</span></div>
+                            <div class="hex-cell alert" style="left:50px;top:112px"><span class="hex-lbl">CLM</span><span class="hex-val">!</span></div>
+                            <div class="hex-cell" style="left:120px;top:112px"><span class="hex-lbl">HK</span><span class="hex-val">3</span></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="flex:0.6">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">EVENT LOG</span><span class="panel-title-ja">イベント</span></span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="log">
+                            <div class="log-entry"><span class="log-time">[14:32:07]</span>SYSTEM ONLINE</div>
+                            <div class="log-entry" style="color:var(--green)"><span class="log-time">[14:32:15]</span>MAGI LINK OK</div>
+                            <div class="log-entry" style="color:var(--cyan)"><span class="log-time">[14:33:02]</span>PATTERN BLUE</div>
+                            <div class="log-entry" style="color:var(--red)"><span class="log-time">[14:33:18]</span>▲ ANGEL ▲</div>
+                            <div class="log-entry" style="color:var(--green)"><span class="log-time">[14:34:01]</span>EVA-01 LAUNCH</div>
+                            <div class="log-entry" style="color:var(--orange)"><span class="log-time">[14:35:22]</span>TARGET LOCK</div>
+                            <div class="log-entry"><span class="log-time">[14:36:00]</span>AWAIT CMD...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- RIGHT COL -->
+            <div class="col">
+                <div class="panel" style="flex:1">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">UNIT STATUS</span><span class="panel-title-ja">機体状況</span></span>
+                        <span class="panel-status ok">ACTV</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="stat-grid">
+                            <div class="stat-cell ok"><div class="stat-lbl">UNIT <span>機体</span></div><div class="stat-val ok">EVA-01</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">TYPE <span>型式</span></div><div class="stat-val">TEST</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">CORE <span>中核</span></div><div class="stat-val ok">OK</div></div>
+                            <div class="stat-cell warn"><div class="stat-lbl">BATT <span>電池</span></div><div class="stat-val warn">47%</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">ARMOR <span>装甲</span></div><div class="stat-val">92%</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">NERVE <span>神経</span></div><div class="stat-val ok">LINK</div></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="flex:0.9">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">MAGI SYSTEM</span><span class="panel-title-ja"> Magi</span></span>
+                        <span class="panel-status ok">ON</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="magi-dsp">
+                            <div class="magi-title">MAGI DECISION</div>
+                            <div class="magi-sub">三種の決定</div>
+                            <div class="magi-nodes">
+                                <div class="magi-node caspar">
+                                    <div class="magi-circle"></div>
+                                    <span class="magi-name">CASPAR</span>
+                                    <span class="magi-name-ja">論理</span>
+                                    <span class="magi-vote" style="color:var(--orange)">賛成</span>
+                                </div>
+                                <div class="magi-node melchior">
+                                    <div class="magi-circle"></div>
+                                    <span class="magi-name">MELCHIOR</span>
+                                    <span class="magi-name-ja">科学</span>
+                                    <span class="magi-vote" style="color:var(--green)">賛成</span>
+                                </div>
+                                <div class="magi-node balthasar">
+                                    <div class="magi-circle"></div>
+                                    <span class="magi-name">BALTHASAR</span>
+                                    <span class="magi-name-ja">感情</span>
+                                    <span class="magi-vote" style="color:var(--cyan)">賛成</span>
+                                </div>
+                            </div>
+                            <div class="magi-result">承認 // APPROVED</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="flex:1">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">RESOURCES</span><span class="panel-title-ja">資源</span></span>
+                        <span class="panel-status warn">LOW PWR</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="stat-grid">
+                            <div class="stat-cell warn"><div class="stat-lbl">POWER <span>電源</span></div><div class="stat-val warn">3:47</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">LCL-T <span>温度</span></div><div class="stat-val">28.4°C</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">O2 <span>酸素</span></div><div class="stat-val">21.4%</div></div>
+                            <div class="stat-cell warn"><div class="stat-lbl">PRESS <span>気圧</span></div><div class="stat-val warn">0.87</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">CO2 <span>炭酸</span></div><div class="stat-val">0.04%</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">HUMID <span>湿度</span></div><div class="stat-val">65%</div></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="panel" style="flex:0.9">
+                    <div class="panel-hdr">
+                        <span><span class="panel-title">THREAT</span><span class="panel-title-ja">脅威</span></span>
+                        <span class="panel-status alert">DETECT</span>
+                    </div>
+                    <div class="panel-body">
+                        <div class="stat-grid">
+                            <div class="stat-cell alert"><div class="stat-lbl">TYPE <span>種別</span></div><div class="stat-val alert">ANGEL</div></div>
+                            <div class="stat-cell alert"><div class="stat-lbl">CLASS <span>階級</span></div><div class="stat-val alert">04</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">DIST <span>距離</span></div><div class="stat-val">2,847m</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">BRG <span>方位</span></div><div class="stat-val">047°</div></div>
+                            <div class="stat-cell ok"><div class="stat-lbl">AT-FLD <span>A.T.場</span></div><div class="stat-val ok">DETECT</div></div>
+                            <div class="stat-cell alert"><div class="stat-lbl">THREAT <span>脅威度</span></div><div class="stat-val alert">HIGH</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <div class="data-stream">SYNC:94.2% | PTN:BLUE | TGT:LOCK | D:2847m | B:047° | PWR:47% | O2:21.4% | AT:STABLE | PLT:IKARI | UNIT:01 | ANG:04 | MAGI:OK | CONF:94% | CHAIN:ACTV | SKILL:12 | LINK:18 | SYNC:94.2% | PTN:BLUE | TGT:LOCK | D:2847m | B:047° | PWR:47% | O2:21.4% | AT:STABLE | PLT:IKARI | UNIT:01 | ANG:04 | MAGI:OK | CONF:94% | CHAIN:ACTV | SKILL:12 | LINK:18 | </div>
+        </footer>
+    </div>
+    
+    <script>
+        function upd(){const n=new Date();document.getElementById('clk').textContent=[n.getHours(),n.getMinutes(),n.getSeconds()].map(x=>String(x).padStart(2,'0')).join(':')}
+        upd();setInterval(upd,1000);
+    </script>
+</body>
+</html>

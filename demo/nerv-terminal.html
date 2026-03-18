@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NERV COMMAND TERMINAL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            font-family: 'Share Tech Mono', 'Courier New', monospace;
+            overflow: hidden;
+            color: #FF8C00;
+        }
+        
+        #crt-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* CRT Canvas - WebGL effects layer */
+        #crt-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        /* Content layer - above CRT effects */
+        #content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: 280px 1fr 280px;
+            grid-template-rows: 60px 1fr 100px;
+            gap: 2px;
+            padding: 2px;
+        }
+        
+        /* Chamfered panel base */
+        .panel {
+            background: rgba(15, 15, 15, 0.95);
+            clip-path: polygon(
+                10px 0%, calc(100% - 10px) 0%,
+                100% 10px, 100% calc(100% - 10px),
+                calc(100% - 10px) 100%, 10px 100%,
+                0% calc(100% - 10px), 0% 10px
+            );
+            border: 1px solid #2A2A2A;
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            background: linear-gradient(90deg, #8B0000 0%, #DC143C 50%, #8B0000 100%);
+        }
+        
+        .header-title {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 8px;
+            text-shadow: 0 0 10px #FF0000, 0 0 20px #FF0000;
+        }
+        
+        .header-time {
+            font-size: 18px;
+            color: #39FF14;
+            text-shadow: 0 0 8px #39FF14;
+        }
+        
+        .header-status {
+            font-size: 12px;
+            color: #00CED1;
+        }
+        
+        /* Left sidebar */
+        .sidebar-left {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        /* Right sidebar */
+        .sidebar-right {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        /* Main display */
+        .main-display {
+            position: relative;
+            background: rgba(5, 5, 5, 0.98);
+        }
+        
+        #graph-canvas {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Bottom ticker */
+        .ticker {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            background: #0A0A0A;
+        }
+        
+        .ticker-content {
+            display: flex;
+            animation: scroll 30s linear infinite;
+            white-space: nowrap;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+        
+        /* Panel title bar */
+        .panel-title {
+            background: linear-gradient(90deg, #8B0000, #5a0000);
+            padding: 6px 12px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: #FF8C00;
+            text-shadow: 0 0 4px #FF8C00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #FF8C00;
+        }
+        
+        .panel-title-ja {
+            font-size: 9px;
+            color: #39FF14;
+            letter-spacing: 1px;
+        }
+        
+        /* Panel content */
+        .panel-content {
+            padding: 12px;
+            font-size: 11px;
+        }
+        
+        /* Status readout */
+        .readout-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            align-items: baseline;
+        }
+        
+        .readout-label {
+            color: #666;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+        
+        .readout-value {
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 6px currentColor;
+        }
+        
+        .readout-value.green { color: #39FF14; }
+        .readout-value.amber { color: #FF8C00; }
+        .readout-value.red { color: #DC143C; }
+        .readout-value.cyan { color: #00CED1; }
+        
+        .readout-unit {
+            font-size: 9px;
+            color: #666;
+            margin-left: 4px;
+        }
+        
+        /* MAGI nodes */
+        .magi-container {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+        }
+        
+        .magi-node {
+            text-align: center;
+        }
+        
+        .magi-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid currentColor;
+            margin: 0 auto 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: bold;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .magi-caspar { color: #FF8C00; }
+        .magi-melchior { color: #39FF14; }
+        .magi-balthasar { color: #00CED1; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.7; box-shadow: 0 0 5px currentColor; }
+            50% { opacity: 1; box-shadow: 0 0 15px currentColor; }
+        }
+        
+        .magi-name {
+            font-size: 9px;
+            color: #666;
+            letter-spacing: 1px;
+        }
+        
+        .magi-ja {
+            font-size: 8px;
+            color: currentColor;
+            margin-top: 2px;
+        }
+        
+        /* Sync ratio */
+        .sync-display {
+            text-align: center;
+            padding: 20px 0;
+        }
+        
+        .sync-value {
+            font-size: 48px;
+            font-weight: bold;
+            color: #39FF14;
+            text-shadow: 0 0 10px #39FF14, 0 0 20px #39FF14, 0 0 30px #39FF14;
+            animation: syncPulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes syncPulse {
+            0%, 100% { opacity: 0.9; }
+            50% { opacity: 1; }
+        }
+        
+        .sync-label {
+            font-size: 10px;
+            color: #666;
+            letter-spacing: 2px;
+            margin-top: 4px;
+        }
+        
+        .sync-label-ja {
+            font-size: 9px;
+            color: #39FF14;
+            margin-top: 2px;
+        }
+        
+        /* Skill list */
+        .skill-list {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        
+        .skill-item {
+            display: flex;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid #1A1A1A;
+        }
+        
+        .skill-hex {
+            width: 12px;
+            height: 12px;
+            background: currentColor;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            margin-right: 8px;
+        }
+        
+        .skill-name {
+            flex: 1;
+            font-size: 10px;
+            color: #CCCCCC;
+        }
+        
+        .skill-status {
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+        
+        .skill-status.active { background: #1a4d1a; color: #39FF14; }
+        .skill-status.pending { background: #4d3d1a; color: #FFD700; }
+        
+        /* Alert banner */
+        .alert-banner {
+            position: absolute;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #FF0000;
+            color: #000;
+            padding: 8px 30px;
+            font-size: 14px;
+            font-weight: bold;
+            letter-spacing: 4px;
+            animation: alertFlash 0.5s step-end infinite;
+            z-index: 100;
+            display: none;
+        }
+        
+        .alert-banner.active {
+            display: block;
+        }
+        
+        @keyframes alertFlash {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        
+        /* Hexagonal grid overlay */
+        .hex-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+        }
+    </style>
+</head>
+<body>
+    <div id="crt-container">
+        <canvas id="crt-canvas"></canvas>
+        <div id="content">
+            <!-- Header -->
+            <div class="panel header">
+                <div class="header-status">
+                    NERV HQ<br>
+                    <span style="color: #39FF14;">● ONLINE</span>
+                </div>
+                <div class="header-title">NERV COMMAND SYSTEM</div>
+                <div class="header-time" id="clock">00:00:00</div>
+            </div>
+            
+            <!-- Left Sidebar -->
+            <div class="sidebar-left">
+                <!-- System Status -->
+                <div class="panel" style="flex: 0 0 auto;">
+                    <div class="panel-title">
+                        <span>SYSTEM STATUS</span>
+                        <span class="panel-title-ja">システム状態</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="readout-row">
+                            <span class="readout-label">CPU LOAD</span>
+                            <span><span class="readout-value amber" id="cpu">47.2</span><span class="readout-unit">%</span></span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="readout-label">MEMORY</span>
+                            <span><span class="readout-value green" id="mem">12.4</span><span class="readout-unit">GB</span></span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="readout-label">ACTIVE TASKS</span>
+                            <span><span class="readout-value cyan" id="tasks">23</span></span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="readout-label">NETWORK</span>
+                            <span><span class="readout-value green">●</span><span class="readout-unit">STABLE</span></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- MAGI Decision -->
+                <div class="panel" style="flex: 0 0 auto;">
+                    <div class="panel-title">
+                        <span>MAGI DECISION</span>
+                        <span class="panel-title-ja">決定</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="magi-container">
+                            <div class="magi-node magi-caspar">
+                                <div class="magi-circle magi-caspar">賛成</div>
+                                <div class="magi-name">CASPAR</div>
+                                <div class="magi-ja">論理</div>
+                            </div>
+                            <div class="magi-node magi-melchior">
+                                <div class="magi-circle magi-melchior">賛成</div>
+                                <div class="magi-name">MELCHIOR</div>
+                                <div class="magi-ja">科学</div>
+                            </div>
+                            <div class="magi-node magi-balthasar">
+                                <div class="magi-circle magi-balthasar">賛成</div>
+                                <div class="magi-name">BALTHASAR</div>
+                                <div class="magi-ja">感情</div>
+                            </div>
+                        </div>
+                        <div style="text-align: center; color: #39FF14; font-weight: bold; text-shadow: 0 0 8px #39FF14;">
+                            APPROVED / 承認
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Active Skills -->
+                <div class="panel" style="flex: 1;">
+                    <div class="panel-title">
+                        <span>SKILL CHAIN</span>
+                        <span class="panel-title-ja">スキル</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="skill-list">
+                            <div class="skill-item">
+                                <div class="skill-hex" style="color: #00FFFF;"></div>
+                                <span class="skill-name">web-fetch</span>
+                                <span class="skill-status active">ACTIVE</span>
+                            </div>
+                            <div class="skill-item">
+                                <div class="skill-hex" style="color: #39FF14;"></div>
+                                <span class="skill-name">html-parse</span>
+                                <span class="skill-status active">ACTIVE</span>
+                            </div>
+                            <div class="skill-item">
+                                <div class="skill-hex" style="color: #FF8C00;"></div>
+                                <span class="skill-name">text-extract</span>
+                                <span class="skill-status pending">PENDING</span>
+                            </div>
+                            <div class="skill-item">
+                                <div class="skill-hex" style="color: #FFD700;"></div>
+                                <span class="skill-name">sentiment</span>
+                                <span class="skill-status pending">WAIT</span>
+                            </div>
+                            <div class="skill-item">
+                                <div class="skill-hex" style="color: #FFD700;"></div>
+                                <span class="skill-name">summarize</span>
+                                <span class="skill-status pending">WAIT</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Graph Display -->
+            <div class="panel main-display">
+                <canvas id="graph-canvas"></canvas>
+                <div class="alert-banner" id="alert">
+                    ▲ PATTERN BLUE DETECTED ▲
+                </div>
+            </div>
+            
+            <!-- Right Sidebar -->
+            <div class="sidebar-right">
+                <!-- Sync Ratio -->
+                <div class="panel" style="flex: 0 0 auto;">
+                    <div class="panel-title">
+                        <span>SYNC RATIO</span>
+                        <span class="panel-title-ja">同期率</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="sync-display">
+                            <div class="sync-value" id="sync">92.4%</div>
+                            <div class="sync-label">PILOT SYNCHRONIZATION</div>
+                            <div class="sync-label-ja">パイロット同期</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Graph Stats -->
+                <div class="panel" style="flex: 0 0 auto;">
+                    <div class="panel-title">
+                        <span>GRAPH METRICS</span>
+                        <span class="panel-title-ja">指標</span>
+                    </div>
+                    <div class="panel-content">
+                        <div class="readout-row">
+                            <span class="readout-label">TOTAL NODES</span>
+                            <span class="readout-value cyan">156</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="readout-label">EDGES</span>
+                            <span class="readout-value amber">247</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="readout-label">CLUSTERS</span>
+                            <span class="readout-value green">8</span>
+                        </div>
+                        <div class="readout-row">
+                            <span class="readout-label">CONFIDENCE</span>
+                            <span><span class="readout-value green">94.7</span><span class="readout-unit">%</span></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Events -->
+                <div class="panel" style="flex: 1;">
+                    <div class="panel-title">
+                        <span>EVENT LOG</span>
+                        <span class="panel-title-ja">履歴</span>
+                    </div>
+                    <div class="panel-content" id="event-log" style="font-size: 9px; color: #666;">
+                        <div style="color: #39FF14;">● 17:42:03 Task initialized</div>
+                        <div style="color: #00CED1;">● 17:42:05 Skill chain derived</div>
+                        <div style="color: #FF8C00;">● 17:42:08 Executing web-fetch</div>
+                        <div style="color: #FF8C00;">● 17:42:12 Parsing content</div>
+                        <div style="color: #39FF14;">● 17:42:15 Analysis complete</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Bottom Ticker -->
+            <div class="panel ticker">
+                <div class="ticker-content">
+                    <span id="ticker-text"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════════
+        // CRT EFFECTS - WebGL Shader
+        // ═══════════════════════════════════════════════════════════════════════════
+        
+        const crtCanvas = document.getElementById('crt-canvas');
+        const gl = crtCanvas.getContext('webgl') || crtCanvas.getContext('experimental-webgl');
+        
+        // Vertex shader
+        const vertexShaderSource = `
+            attribute vec2 a_position;
+            attribute vec2 a_texCoord;
+            varying vec2 v_texCoord;
+            void main() {
+                gl_Position = vec4(a_position, 0.0, 1.0);
+                v_texCoord = a_texCoord;
+            }
+        `;
+        
+        // Fragment shader - CRT effect
+        const fragmentShaderSource = `
+            precision mediump float;
+            varying vec2 v_texCoord;
+            uniform sampler2D u_texture;
+            uniform float u_time;
+            uniform vec2 u_resolution;
+            
+            void main() {
+                vec2 uv = v_texCoord;
+                
+                // Scanlines
+                float scanline = sin(uv.y * u_resolution.y * 3.14159) * 0.04;
+                
+                // Chromatic aberration
+                float aberration = 0.002;
+                vec4 col;
+                col.r = texture2D(u_texture, vec2(uv.x + aberration, uv.y)).r;
+                col.g = texture2D(u_texture, uv).g;
+                col.b = texture2D(u_texture, vec2(uv.x - aberration, uv.y)).b;
+                col.a = 1.0;
+                
+                // Vignette
+                float dist = distance(uv, vec2(0.5, 0.5));
+                float vignette = smoothstep(0.8, 0.4, dist);
+                
+                // Apply effects
+                col.rgb -= scanline;
+                col.rgb *= vignette;
+                
+                // Subtle noise
+                float noise = fract(sin(dot(uv + u_time * 0.001, vec2(12.9898, 78.233))) * 43758.5453);
+                col.rgb += (noise - 0.5) * 0.02;
+                
+                // Phosphor glow simulation
+                col.rgb = pow(col.rgb, vec3(0.95));
+                
+                gl_FragColor = col;
+            }
+        `;
+        
+        function createShader(gl, type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error(gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+        
+        function initCRT() {
+            if (!gl) {
+                console.log('WebGL not supported, falling back to CSS');
+                return;
+            }
+            
+            const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+            const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+            
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error(gl.getProgramInfoLog(program));
+                return;
+            }
+            
+            // Full-screen quad
+            const positions = new Float32Array([
+                -1, -1, 0, 1,
+                 1, -1, 1, 1,
+                -1,  1, 0, 0,
+                 1,  1, 1, 0
+            ]);
+            
+            const buffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+            gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+            
+            const posLoc = gl.getAttribLocation(program, 'a_position');
+            const texLoc = gl.getAttribLocation(program, 'a_texCoord');
+            
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 16, 0);
+            
+            gl.enableVertexAttribArray(texLoc);
+            gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 16, 8);
+            
+            gl.useProgram(program);
+            
+            // Create texture from current page
+            function render() {
+                gl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
+                
+                // Set uniforms
+                const timeLoc = gl.getUniformLocation(program, 'u_time');
+                const resLoc = gl.getUniformLocation(program, 'u_resolution');
+                
+                gl.uniform1f(timeLoc, performance.now() / 1000);
+                gl.uniform2f(resLoc, crtCanvas.width, crtCanvas.height);
+                
+                // Clear and draw
+                gl.clearColor(0, 0, 0, 1);
+                gl.clear(gl.COLOR_BUFFER_BIT);
+                gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+                
+                requestAnimationFrame(render);
+            }
+            
+            render();
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════
+        // GRAPH VISUALIZATION - Canvas 2D Force Graph
+        // ═══════════════════════════════════════════════════════════════════════════
+        
+        const graphCanvas = document.getElementById('graph-canvas');
+        const ctx = graphCanvas.getContext('2d');
+        
+        // Graph data
+        const nodes = [];
+        const edges = [];
+        const capabilities = ['web', 'code', 'terminal', 'research', 'llm', 'vision'];
+        const capColors = {
+            web: '#00FFFF',
+            code: '#39FF14',
+            terminal: '#FF8C00',
+            research: '#FF00FF',
+            llm: '#FFD700',
+            vision: '#FF0000'
+        };
+        
+        // Generate nodes
+        for (let i = 0; i < 50; i++) {
+            const cap = capabilities[Math.floor(Math.random() * capabilities.length)];
+            nodes.push({
+                id: i,
+                x: Math.random() * graphCanvas.width,
+                y: Math.random() * graphCanvas.height,
+                vx: 0,
+                vy: 0,
+                size: 20 + Math.random() * 10,
+                color: capColors[cap],
+                cap: cap
+            });
+        }
+        
+        // Generate edges
+        for (let i = 0; i < 80; i++) {
+            const source = Math.floor(Math.random() * nodes.length);
+            const target = Math.floor(Math.random() * nodes.length);
+            if (source !== target) {
+                edges.push({ source, target });
+            }
+        }
+        
+        function drawHexagon(cx, cy, size) {
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = Math.PI / 6 + i * Math.PI / 3;
+                const x = cx + size * Math.cos(angle);
+                const y = cy + size * Math.sin(angle);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+        }
+        
+        function renderGraph() {
+            const width = graphCanvas.width = graphCanvas.offsetWidth;
+            const height = graphCanvas.height = graphCanvas.offsetHeight;
+            
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw hexagonal grid background
+            ctx.strokeStyle = 'rgba(42, 42, 42, 0.3)';
+            ctx.lineWidth = 0.5;
+            const hexSize = 40;
+            for (let q = -10; q < 20; q++) {
+                for (let r = -10; r < 20; r++) {
+                    const x = hexSize * 1.5 * q + width / 2;
+                    const y = hexSize * (Math.sqrt(3)/2 * q + Math.sqrt(3) * r) + height / 2;
+                    drawHexagon(x, y, hexSize * 0.9);
+                    ctx.stroke();
+                }
+            }
+            
+            // Physics step
+            for (const n1 of nodes) {
+                // Center gravity
+                n1.vx += (width / 2 - n1.x) * 0.001;
+                n1.vy += (height / 2 - n1.y) * 0.001;
+                
+                // Repulsion
+                for (const n2 of nodes) {
+                    if (n1 === n2) continue;
+                    const dx = n2.x - n1.x;
+                    const dy = n2.y - n1.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy) + 1;
+                    const force = 2000 / (dist * dist);
+                    n1.vx -= force * dx / dist;
+                    n1.vy -= force * dy / dist;
+                }
+                
+                // Damping
+                n1.vx *= 0.9;
+                n1.vy *= 0.9;
+                
+                // Update position
+                n1.x += n1.vx;
+                n1.y += n1.vy;
+                
+                // Bounds
+                n1.x = Math.max(50, Math.min(width - 50, n1.x));
+                n1.y = Math.max(50, Math.min(height - 50, n1.y));
+            }
+            
+            // Draw edges
+            ctx.strokeStyle = 'rgba(255, 140, 0, 0.3)';
+            ctx.lineWidth = 1;
+            for (const edge of edges) {
+                const n1 = nodes[edge.source];
+                const n2 = nodes[edge.target];
+                ctx.beginPath();
+                ctx.moveTo(n1.x, n1.y);
+                ctx.lineTo(n2.x, n2.y);
+                ctx.stroke();
+            }
+            
+            // Draw nodes as hexagons
+            for (const node of nodes) {
+                // Glow
+                ctx.fillStyle = node.color + '40';
+                drawHexagon(node.x, node.y, node.size + 8);
+                ctx.fill();
+                
+                // Main hex
+                ctx.fillStyle = node.color;
+                drawHexagon(node.x, node.y, node.size);
+                ctx.fill();
+                
+                // Inner hex
+                ctx.fillStyle = '#0A0A0A';
+                drawHexagon(node.x, node.y, node.size * 0.6);
+                ctx.fill();
+                
+                // Border
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 1.5;
+                drawHexagon(node.x, node.y, node.size);
+                ctx.stroke();
+            }
+            
+            requestAnimationFrame(renderGraph);
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════
+        // DYNAMIC DATA UPDATES
+        // ═══════════════════════════════════════════════════════════════════════════
+        
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').textContent = 
+                now.toTimeString().split(' ')[0];
+        }
+        
+        function updateMetrics() {
+            document.getElementById('cpu').textContent = (40 + Math.random() * 20).toFixed(1);
+            document.getElementById('mem').textContent = (10 + Math.random() * 5).toFixed(1);
+            document.getElementById('tasks').textContent = Math.floor(20 + Math.random() * 10);
+            
+            const sync = 85 + Math.random() * 10;
+            const syncEl = document.getElementById('sync');
+            syncEl.textContent = sync.toFixed(1) + '%';
+            
+            // Color based on sync
+            if (sync > 95) {
+                syncEl.style.color = '#DC143C';
+            } else if (sync > 90) {
+                syncEl.style.color = '#39FF14';
+            } else {
+                syncEl.style.color = '#FF8C00';
+            }
+        }
+        
+        function generateTickerText() {
+            const phrases = [
+                '>>> SYSTEM NOMINAL',
+                '>>> SKILL GRAPH PROCESSING',
+                '>>> PATTERN BLUE MONITORING ACTIVE',
+                '>>> MAGI CONSENSUS: UNANIMOUS',
+                '>>> GEOFRONT PERIMETER: SECURE',
+                '>>> NEURAL LINK: STABLE',
+                '>>> AT FIELD: NORMAL',
+                '>>> LCL CIRCULATION: OPTIMAL',
+                '>>> EVA-01: STANDBY',
+                '>>> NERV-HQ: ALL SYSTEMS GO'
+            ];
+            
+            let text = '';
+            for (let i = 0; i < 10; i++) {
+                text += phrases.concat(phrases).join(' │ ') + ' │ ';
+            }
+            document.getElementById('ticker-text').textContent = text;
+        }
+        
+        // ═══════════════════════════════════════════════════════════════════════════
+        // INITIALIZATION
+        // ═══════════════════════════════════════════════════════════════════════════
+        
+        function resizeCanvas() {
+            crtCanvas.width = window.innerWidth;
+            crtCanvas.height = window.innerHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        generateTickerText();
+        setInterval(updateClock, 1000);
+        setInterval(updateMetrics, 2000);
+        updateClock();
+        
+        // Start renders
+        renderGraph();
+        initCRT();
+        
+        // Random alerts
+        setInterval(() => {
+            if (Math.random() > 0.95) {
+                const alert = document.getElementById('alert');
+                alert.classList.add('active');
+                setTimeout(() => alert.classList.remove('active'), 3000);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
