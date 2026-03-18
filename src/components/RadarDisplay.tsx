@@ -34,7 +34,7 @@ export function RadarDisplay({
   showGrid = true,
   showCardinals = true,
   alertMode = false,
-  centerLabel = 'EVA-01',
+  centerLabel: _centerLabel = 'EVA-01',
 }: RadarDisplayProps) {
   const [sweepAngle, setSweepAngle] = useState(0);
   const [blipAges, setBlipAges] = useState<Map<string, number>>(new Map());
@@ -122,7 +122,7 @@ export function RadarDisplay({
   
   const svgContainerStyle: React.CSSProperties = {
     backgroundColor: alertMode ? 'rgba(139, 0, 0, 0.2)' : '#000000',
-    border: `2px solid ${alertMode ? NERVColors.emergency : NERVColors.white}`,
+    border: `2px solid ${alertMode ? NERVColors.emergency : NERVColors.textBright}`,
     position: 'relative' as const,
   };
   
@@ -167,7 +167,7 @@ export function RadarDisplay({
               cy={center}
               r={radius * r}
               fill="none"
-              stroke={i === 3 ? (alertMode ? NERVColors.emergency : NERVColors.white) : NERVColors.borderMid}
+              stroke={i === 3 ? (alertMode ? NERVColors.emergency : NERVColors.textBright) : NERVColors.borderMid}
               strokeWidth={i === 3 ? 1 : 0.5}
             />
           ))}
@@ -358,7 +358,7 @@ export function RadarScope({
   };
   
   const titleStyle: React.CSSProperties = {
-    color: alertMode ? NERVColors.emergency : NERVColors.white,
+    color: alertMode ? NERVColors.emergency : NERVColors.textBright,
     fontSize: 11,
     letterSpacing: 3,
     fontWeight: 'bold',

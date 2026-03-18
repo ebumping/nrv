@@ -1,4 +1,3 @@
-import React from 'react';
 import { NERVColors } from './NERVPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -139,9 +138,6 @@ export function HexagonalTarget({
         {/* Distance markers on hexagon vertices */}
         {Array.from({ length: 6 }, (_, i) => {
           const angle = (i * 60 - 30) * (Math.PI / 180);
-          const x = centerX + (hexRadius * 1.25) * Math.cos(angle);
-          const y = centerY + (hexRadius * 1.25) * Math.sin(angle);
-          const tickValue = Math.round((i + 1) * (distance / 6));
           return (
             <g key={i}>
               <line
@@ -202,7 +198,6 @@ interface HexagonalClusterProps {
 
 export function HexagonalCluster({ cells, cellSize = 60, columns = 4 }: HexagonalClusterProps) {
   // Flat-top hexagon dimensions
-  const hexWidth = cellSize * 2;
   const hexHeight = cellSize * Math.sqrt(3);
   const horizontalSpacing = cellSize * 1.5;
   const verticalSpacing = hexHeight;

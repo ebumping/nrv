@@ -1,16 +1,9 @@
-import React from 'react';
 import { NERVColors } from './NERVPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // WIREFRAME TERRAIN DISPLAY - 3D wireframe map with grid overlay
 // Key Eva visual: wireframe terrain with blips, zone boundaries
 // ═══════════════════════════════════════════════════════════════════════════════
-
-interface TerrainPoint {
-  x: number;
-  y: number;
-  z: number;
-}
 
 interface BlipData {
   id: string;
@@ -35,8 +28,6 @@ export function WireframeTerrain({
   gridDensity = 10,
   showContours = true,
 }: WireframeTerrainProps) {
-  const gridSpacing = Math.min(width, height) / gridDensity;
-  
   // Generate terrain contour lines (simplified perspective)
   const generateContours = (): JSX.Element[] => {
     const contours: JSX.Element[] = [];

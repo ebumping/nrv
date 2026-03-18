@@ -525,7 +525,7 @@ export function CRTOverlay({
   children, 
   scanlines = true, 
   vignette = true,
-  flicker = false,
+  flicker: _flicker = false,
   scanLine = true,
 }: CRTOverlayProps) {
   return (
