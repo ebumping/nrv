@@ -1,0 +1,22 @@
+[      75ms] [ERROR] Warning: The tag <%s> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.%s animate 
+    at animate
+    at span
+    at div
+    at PatternIndicator (http://localhost:5173/@fs/home/lain/git/nrv/src/components/NERVAdvanced.tsx:1128:36)
+    at div
+    at div
+    at div
+    at CRTOverlay (http://localhost:5173/@fs/home/lain/git/nrv/src/components/Effects.tsx:526:30)
+    at AlertProvider (http://localhost:5173/@fs/home/lain/git/nrv/src/components/NERVAlert.tsx:13:33)
+    at NERVAuthenticDemo (http://localhost:5173/nerv_authentic_demo.tsx?t=1773805608424:205:16) @ http://localhost:5173/@vite/client:509
+[  364420ms] [ERROR] Warning: The tag <%s> is unrecognized in this browser. If you meant to render a React component, start its name with an uppercase letter.%s animate 
+    at animate
+    at span
+    at div
+    at PatternIndicator (http://localhost:5173/@fs/home/lain/git/nrv/src/components/NERVAdvanced.tsx:1128:36)
+    at div
+    at div
+    at div
+    at CRTOverlay (http://localhost:5173/@fs/home/lain/git/nrv/src/components/Effects.tsx:526:30)
+    at AlertProvider (http://localhost:5173/@fs/home/lain/git/nrv/src/components/NERVAlert.tsx:13:33)
+    at NERVAuthenticDemo (http://localhost:5173/nerv_authentic_demo.tsx?t=1773805608424:205:16) @ http://localhost:5173/@vite/client:509

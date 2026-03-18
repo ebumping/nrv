@@ -126,12 +126,31 @@ export function ContourMap({
   className,
 }: ContourMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [contourLines, setContourLines] = useState<ContourLine[]>([]);
   const [animationFrame, setAnimationFrame] = useState(0);
-  
+  const [containerWidth, setContainerWidth] = useState(0);
+
   const primaryColor = colorMap[contourColor];
   const refColor = colorMap[referenceColor];
   const density = densityConfig[contourDensity];
+
+  // Measure actual container width for proper viewBox aspect ratio
+  useEffect(() => {
+    const measure = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  // Compute viewBox to preserve aspect ratio
+  const vbWidth = containerWidth > 0 ? (containerWidth / height) * 100 : 100;
+  const vbHeight = 100;
   
   // Generate contour lines based on noise/flow field simulation
   const generateContours = useCallback(() => {
@@ -145,35 +164,36 @@ export function ContourMap({
     };
     
     // Generate contour lines
+    const w = vbWidth;
     for (let i = 0; i < density.lines; i++) {
       const points: string[] = [];
       const yBase = (i / density.lines) * 100;
       const amplitude = 8 + Math.sin(i * 0.3) * 4;
       const frequency = 0.08 + Math.random() * 0.04;
       const phase = animationFrame * 0.01 + i * 0.5;
-      
+
       // Create flowing path
-      for (let x = 0; x <= 100; x += 2) {
+      for (let x = 0; x <= w; x += 2) {
         const y = yBase + noise(x * frequency, i, phase) * amplitude;
         points.push(`${x},${Math.max(0, Math.min(100, y))}`);
       }
-      
+
       lines.push({
         points: points.join(' '),
         opacity: density.opacity + (i % 3 === 0 ? 0.2 : 0),
       });
     }
-    
+
     // Add some crossing lines for field complexity
     for (let i = 0; i < density.lines / 2; i++) {
       const points: string[] = [];
-      const xBase = (i / (density.lines / 2)) * 100;
-      
+      const xBase = (i / (density.lines / 2)) * w;
+
       for (let y = 0; y <= 100; y += 3) {
         const x = xBase + Math.sin(y * 0.1 + animationFrame * 0.02) * 5;
-        points.push(`${Math.max(0, Math.min(100, x))},${y}`);
+        points.push(`${Math.max(0, Math.min(w, x))},${y}`);
       }
-      
+
       lines.push({
         points: points.join(' '),
         opacity: density.opacity * 0.6,
@@ -181,7 +201,7 @@ export function ContourMap({
     }
     
     setContourLines(lines);
-  }, [animationFrame, density]);
+  }, [animationFrame, density, vbWidth]);
   
   // Animate contours
   useEffect(() => {
@@ -284,10 +304,10 @@ export function ContourMap({
     if (!cornerReadouts) return null;
     
     const positions = {
-      topLeft: { x: 50, y: 16, anchor: 'start' as const },
-      topRight: { x: '95%' as const, y: 16, anchor: 'end' as const },
-      bottomLeft: { x: 50, y: '97%' as const, anchor: 'start' as const },
-      bottomRight: { x: '95%' as const, y: '97%' as const, anchor: 'end' as const },
+      topLeft: { x: vbWidth * 0.1, y: 10, anchor: 'start' as const },
+      topRight: { x: vbWidth * 0.95, y: 10, anchor: 'end' as const },
+      bottomLeft: { x: vbWidth * 0.1, y: 97, anchor: 'start' as const },
+      bottomRight: { x: vbWidth * 0.95, y: 97, anchor: 'end' as const },
     };
     
     return (
@@ -321,9 +341,10 @@ export function ContourMap({
     return (
       <g className="contour-nodes">
         {nodes.map((node) => {
-          const x = 40 + node.x * (100 - 40); // Account for axis margin
+          const marginLeft = vbWidth * 0.08; // axis margin proportional
+          const x = marginLeft + node.x * (vbWidth - marginLeft);
           const y = 10 + node.y * 80; // Account for corner readouts
-          const size = node.size || 4;
+          const size = node.size || 3;
           
           const animationStyle = nodeAnimation !== 'none' || node.pulse ? {
             animation: node.pulse 
@@ -341,17 +362,17 @@ export function ContourMap({
             >
               {/* Node glow */}
               <circle
-                cx={`${x}%`}
-                cy={`${y}%`}
-                r={size + 4}
+                cx={x}
+                cy={y}
+                r={size + 2}
                 fill={node.color || primaryColor}
                 opacity={0.2}
                 style={animationStyle}
               />
               {/* Node core */}
               <circle
-                cx={`${x}%`}
-                cy={`${y}%`}
+                cx={x}
+                cy={y}
                 r={size}
                 fill={node.color || primaryColor}
                 style={animationStyle}
@@ -359,11 +380,11 @@ export function ContourMap({
               {/* Node label */}
               {node.label && (
                 <text
-                  x={`${x}%`}
-                  y={`${y - size - 6}%`}
+                  x={x}
+                  y={y - size - 3}
                   textAnchor="middle"
                   fill={colorMap.orange}
-                  fontSize="8"
+                  fontSize="5"
                   fontFamily="var(--nerv-font-mono, monospace)"
                 >
                   {node.label}
@@ -424,19 +445,19 @@ export function ContourMap({
   };
   
   return (
-    <div style={containerStyle} className={className}>
+    <div ref={containerRef} style={containerStyle} className={className}>
       <svg
         ref={svgRef}
         width="100%"
         height="100%"
-        viewBox="0 0 100 100"
+        viewBox={`0 0 ${vbWidth} ${vbHeight}`}
         preserveAspectRatio="none"
         style={{ display: 'block' }}
       >
         {/* Background pattern */}
         {renderBackgroundPattern()}
         {backgroundPattern !== 'none' && (
-          <rect width="100" height="100" fill={`url(#${backgroundPattern}-pattern)`} />
+          <rect width={vbWidth} height="100" fill={`url(#${backgroundPattern}-pattern)`} />
         )}
         
         {/* Reference grid */}
@@ -460,10 +481,10 @@ export function ContourMap({
         {/* Crosshair markers */}
         {showCrosshairs && (
           <>
-            {renderCrosshair(25, 25)}
-            {renderCrosshair(75, 25)}
-            {renderCrosshair(25, 75)}
-            {renderCrosshair(75, 75)}
+            {renderCrosshair(vbWidth * 0.25, 25)}
+            {renderCrosshair(vbWidth * 0.75, 25)}
+            {renderCrosshair(vbWidth * 0.25, 75)}
+            {renderCrosshair(vbWidth * 0.75, 75)}
           </>
         )}
         
