@@ -906,6 +906,198 @@
         .brain-region-fill.normal { background: var(--nerv-green); }
         .brain-region-fill.elevated { background: var(--nerv-orange); }
         .brain-region-fill.critical { background: var(--nerv-red); animation: blink 0.3s infinite; }
+        
+        /* ═════════════════════════════════════════════════════════════════\
+           ALERT MODE ENHANCED - Full system danger state
+           ═════════════════════════════════════════════════════════════════ */
+        
+        body.alert-mode {
+            animation: alertScreenPulse 0.5s infinite;
+        }
+        
+        @keyframes alertScreenPulse {
+            0%, 49% { background-color: #000000; }
+            50%, 100% { background-color: #0a0000; }
+        }
+        
+        body.alert-mode .panel {
+            border-color: var(--nerv-crimson) !important;
+        }
+        
+        body.alert-mode .skill-node.active circle {
+            fill: rgba(255, 0, 0, 0.3);
+            stroke: var(--nerv-red);
+        }
+        
+        body.alert-mode .skill-link.active {
+            stroke: var(--nerv-crimson);
+        }
+        
+        /* Alert state text animations */
+        .alert-text-flash {
+            animation: alertTextFlash 0.3s step-end infinite;
+        }
+        
+        @keyframes alertTextFlash {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0.4; }
+        }
+        
+        /* Cross-fade transitions for panel states */
+        .panel-content-transition {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .panel-content-hidden {
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            position: absolute;
+        }
+        
+        .panel-content-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        /* Enhanced scanlines for alert mode */
+        body.alert-mode::before {
+            background: repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(255, 0, 0, 0.05) 2px,
+                rgba(255, 0, 0, 0.05) 4px
+            );
+        }
+        
+        /* Dense data strip */
+        .data-strip {
+            font-size: 7px;
+            color: var(--nerv-text-dim);
+            display: flex;
+            gap: 12px;
+            padding: 4px 0;
+            border-top: 1px solid var(--nerv-border);
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .data-strip-item {
+            display: flex;
+            gap: 4px;
+        }
+        
+        .data-strip-item .label {
+            color: var(--nerv-text-dim);
+        }
+        
+        .data-strip-item .value {
+            color: var(--nerv-green);
+        }
+        
+        .data-strip-item .value.warning {
+            color: var(--nerv-orange);
+        }
+        
+        .data-strip-item .value.danger {
+            color: var(--nerv-red);
+        }
+        
+        /* Alert content overlays */
+        .alert-overlay-content {
+            display: none;
+            color: var(--nerv-red);
+            text-align: center;
+            padding: 8px;
+        }
+        
+        body.alert-mode .alert-overlay-content {
+            display: block;
+            animation: alertTextFlash 0.4s step-end infinite;
+        }
+        
+        body.alert-mode .normal-content {
+            display: none;
+        }
+        
+        /* Countdown timer for alert */
+        .countdown-display {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--nerv-red);
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px var(--nerv-red);
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Audio indicator */
+        .audio-indicator {
+            position: fixed;
+            bottom: 40px;
+            right: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 9px;
+            color: var(--nerv-text-dim);
+            z-index: 1000;
+        }
+        
+        .audio-bars {
+            display: flex;
+            gap: 2px;
+            height: 12px;
+            align-items: flex-end;
+        }
+        
+        .audio-bar {
+            width: 3px;
+            background: var(--nerv-green);
+            animation: audioBar 0.5s ease infinite;
+        }
+        
+        .audio-bar:nth-child(1) { height: 4px; animation-delay: 0s; }
+        .audio-bar:nth-child(2) { height: 8px; animation-delay: 0.1s; }
+        .audio-bar:nth-child(3) { height: 6px; animation-delay: 0.2s; }
+        .audio-bar:nth-child(4) { height: 10px; animation-delay: 0.3s; }
+        
+        @keyframes audioBar {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.5); }
+        }
+        
+        .audio-indicator.muted .audio-bar {
+            background: var(--nerv-text-dim);
+            animation: none;
+            height: 2px !important;
+        }
+        
+        /* Threshold warning strip */
+        .threshold-strip {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 8px;
+            border-top: 1px solid var(--nerv-border);
+            margin-top: 8px;
+        }
+        
+        .threshold-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .threshold-label {
+            color: var(--nerv-text-dim);
+            font-size: 6px;
+            letter-spacing: 1px;
+        }
+        
+        .threshold-value {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
