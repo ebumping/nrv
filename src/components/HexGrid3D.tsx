@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 
 /**
  * HexGrid3D - Multi-matrix 3D hexagonal skill taxonomy
@@ -147,6 +147,20 @@ export function HexGrid3D({
     panDragStart: { x: number; y: number } | null;
     panOffsetXStart: number;
     panOffsetYStart: number;
+    // Smooth camera targets
+    targetAngle: number;
+    targetTilt: number;
+    targetZoom: number;
+    targetPanX: number;
+    targetPanY: number;
+    // Momentum velocities
+    velocityAngle: number;
+    velocityTilt: number;
+    velocityPanX: number;
+    velocityPanY: number;
+    // Velocity tracking
+    lastMouseX: number;
+    lastMouseY: number;
   }>({
     cameraAngle: -0.4,
     cameraTilt: 0.55,
@@ -162,6 +176,17 @@ export function HexGrid3D({
     panDragStart: null,
     panOffsetXStart: 0,
     panOffsetYStart: 0,
+    targetAngle: -0.4,
+    targetTilt: 0.55,
+    targetZoom: 1,
+    targetPanX: 0,
+    targetPanY: 0,
+    velocityAngle: 0,
+    velocityTilt: 0,
+    velocityPanX: 0,
+    velocityPanY: 0,
+    lastMouseX: 0,
+    lastMouseY: 0,
   });
 
   useEffect(() => {
@@ -278,7 +303,30 @@ export function HexGrid3D({
       const w = state.width;
       const h = height;
       state.frame++;
-      // No autorotation — right-click drag to pan, left-click to orbit
+
+      // Smooth camera: apply momentum then lerp toward targets
+      if (!state.dragStart && !state.panDragStart) {
+        state.targetAngle += state.velocityAngle;
+        state.targetTilt = Math.max(0.1, Math.min(1.2, state.targetTilt + state.velocityTilt));
+        state.targetPanX += state.velocityPanX;
+        state.targetPanY += state.velocityPanY;
+        const friction = 0.92;
+        state.velocityAngle *= friction;
+        state.velocityTilt *= friction;
+        state.velocityPanX *= friction;
+        state.velocityPanY *= friction;
+        if (Math.abs(state.velocityAngle) < 0.00005) state.velocityAngle = 0;
+        if (Math.abs(state.velocityTilt) < 0.00005) state.velocityTilt = 0;
+        if (Math.abs(state.velocityPanX) < 0.01) state.velocityPanX = 0;
+        if (Math.abs(state.velocityPanY) < 0.01) state.velocityPanY = 0;
+      }
+      const smooth = 0.14;
+      state.cameraAngle += (state.targetAngle - state.cameraAngle) * smooth;
+      state.cameraTilt += (state.targetTilt - state.cameraTilt) * smooth;
+      state.zoomLevel += (state.targetZoom - state.zoomLevel) * smooth;
+      state.panOffsetX += (state.targetPanX - state.panOffsetX) * smooth;
+      state.panOffsetY += (state.targetPanY - state.panOffsetY) * smooth;
+
       const camAngle = state.cameraAngle;
       const time = state.frame * 0.02;
 
@@ -509,17 +557,24 @@ export function HexGrid3D({
       e.preventDefault();
     };
     const onMouseDown = (e: MouseEvent) => {
+      // Kill momentum on new interaction
+      state.velocityAngle = 0;
+      state.velocityTilt = 0;
+      state.velocityPanX = 0;
+      state.velocityPanY = 0;
+      state.lastMouseX = e.clientX;
+      state.lastMouseY = e.clientY;
       if (e.button === 2) {
         // Right-click: pan (horizontal + vertical)
         state.panDragStart = { x: e.clientX, y: e.clientY };
-        state.panOffsetXStart = state.panOffsetX;
-        state.panOffsetYStart = state.panOffsetY;
+        state.panOffsetXStart = state.targetPanX;
+        state.panOffsetYStart = state.targetPanY;
         el.style.cursor = 'move';
       } else {
         // Left-click: camera orbit
         state.dragStart = { x: e.clientX, y: e.clientY };
-        state.dragAngleStart = state.cameraAngle;
-        state.dragTiltStart = state.cameraTilt;
+        state.dragAngleStart = state.targetAngle;
+        state.dragTiltStart = state.targetTilt;
         el.style.cursor = 'grabbing';
       }
     };
@@ -527,14 +582,20 @@ export function HexGrid3D({
       if (state.panDragStart) {
         const dx = e.clientX - state.panDragStart.x;
         const dy = e.clientY - state.panDragStart.y;
-        state.panOffsetX = state.panOffsetXStart - dx * 1.5;
-        state.panOffsetY = state.panOffsetYStart - dy * 1.5;
+        state.targetPanX = state.panOffsetXStart - dx * 1.5;
+        state.targetPanY = state.panOffsetYStart - dy * 1.5;
+        state.velocityPanX = -(e.clientX - state.lastMouseX) * 1.5;
+        state.velocityPanY = -(e.clientY - state.lastMouseY) * 1.5;
       } else if (state.dragStart) {
         const dx = e.clientX - state.dragStart.x;
         const dy = e.clientY - state.dragStart.y;
-        state.cameraAngle = state.dragAngleStart + dx * 0.005;
-        state.cameraTilt = Math.max(0.1, Math.min(1.2, state.dragTiltStart + dy * 0.005));
+        state.targetAngle = state.dragAngleStart + dx * 0.005;
+        state.targetTilt = Math.max(0.1, Math.min(1.2, state.dragTiltStart + dy * 0.005));
+        state.velocityAngle = (e.clientX - state.lastMouseX) * 0.005;
+        state.velocityTilt = (e.clientY - state.lastMouseY) * 0.005;
       }
+      state.lastMouseX = e.clientX;
+      state.lastMouseY = e.clientY;
     };
     const onMouseUp = () => {
       state.dragStart = null;
@@ -543,7 +604,7 @@ export function HexGrid3D({
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      state.zoomLevel = Math.max(0.5, Math.min(3, state.zoomLevel + e.deltaY * 0.001));
+      state.targetZoom = Math.max(0.5, Math.min(3, state.targetZoom + e.deltaY * 0.001));
     };
 
     el.addEventListener('contextmenu', onContextMenu);

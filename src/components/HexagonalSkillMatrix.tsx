@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { NERVColors } from './NERVPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -294,7 +294,7 @@ export function HexagonalSkillMatrix({
         </defs>
         
         {/* Layer group separators */}
-        {showLayerLabels && Object.entries(layerStats).map(([layer, stats]) => {
+        {showLayerLabels && Object.entries(layerStats).map(([layer, _stats]) => {
           const layerNum = parseInt(layer);
           const layerStartIndex = skills.findIndex(s => s.layer === layerNum);
           if (layerStartIndex === -1) return null;
@@ -394,7 +394,7 @@ export function HexagonalSkillMatrix({
                 x={0}
                 y={-2}
                 textAnchor="middle"
-                fill={isSelected ? NERVColors.white : statusColor}
+                fill={isSelected ? '#ffffff' : statusColor}
                 fontSize={fontSize}
                 fontWeight="bold"
                 style={{ textShadow: `0 0 4px ${statusColor}` }}
@@ -701,8 +701,6 @@ export function HexProgressRing({
       : NERVColors.phosphorGreen;
   
   // Calculate hexagon arc length
-  const circumference = 6 * hexRadius; // Approximate
-  
   return (
     <div style={{ textAlign: 'center', fontFamily: "'Courier New', monospace" }}>
       <svg width={size} height={size}>

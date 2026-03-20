@@ -528,7 +528,6 @@ export function HexTarget({
         <polygon
           points={hexPoints(cx, cy, hexSize * 0.4)}
           fill={typeColor}
-          opacity={0.08}
           stroke={typeColor}
           strokeWidth={0.5}
           opacity={0.3}
@@ -740,7 +739,7 @@ interface SyncRatioLargeProps {
   value?: number;
 }
 
-export function SyncRatioLarge({ width = 280, height = 100, value = 94.2 }: SyncRatioLargeProps) {
+export function SyncRatioLarge({ value = 94.2 }: SyncRatioLargeProps) {
   const getColor = (v: number) => {
     if (v < 70) return NERVColors.crimson;
     if (v < 100) return '#FF6A00';
