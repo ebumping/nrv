@@ -34,7 +34,6 @@ export interface Topology3DProps {
   gridColor?: string;
   rotationSpeed?: number;
   showGrid?: boolean;
-  showParticles?: boolean;
   interactive?: boolean;
   className?: string;
 }
@@ -61,18 +60,6 @@ interface SimNode extends Vec3 {
   vx: number;
   vy: number;
   vz: number;
-}
-
-interface Particle {
-  x: number;
-  y: number;
-  z: number;
-  vx: number;
-  vy: number;
-  vz: number;
-  life: number;
-  maxLife: number;
-  color: string;
 }
 
 const DEFAULT_NODES: Topology3DNode[] = [
@@ -106,14 +93,12 @@ export function Topology3D({
   gridColor = '#00CCFF',
   rotationSpeed = 0.003,
   showGrid = true,
-  showParticles = true,
   className,
 }: Topology3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef<{
     simNodes: SimNode[];
-    particles: Particle[];
     cameraAngle: number;
     cameraTilt: number;
     frame: number;
@@ -124,7 +109,6 @@ export function Topology3D({
     zoomLevel: number;
   }>({
     simNodes: [],
-    particles: [],
     cameraAngle: -0.8,
     cameraTilt: 0.5,
     frame: 0,
@@ -236,18 +220,27 @@ export function Topology3D({
       const w = state.width;
       const h = height;
       state.frame++;
-      if (!state.dragStart) state.cameraAngle += rotationSpeed;
+      const time = state.frame * 0.016;
+      // No auto-rotation — agents drift in latent vectorspace, camera is user-controlled
 
-      // Force simulation - only run for first 200 frames to settle, then freeze
-      if (state.frame < 200) {
-        const dt = 0.3;
-        const repulsion = 4000;
-        const attraction = 0.003;
-        const damping = 0.85;
-        const centering = 0.001;
+      // Force simulation: strong settle for first 200 frames, then gentle latent-space drift
+      {
+        const settling = state.frame < 200;
+        const dt = settling ? 0.3 : 0.15;
+        const repulsion = settling ? 4000 : 800;
+        const attraction = settling ? 0.003 : 0.0008;
+        const damping = settling ? 0.85 : 0.96;
+        const centering = settling ? 0.001 : 0.0004;
 
         for (let i = 0; i < state.simNodes.length; i++) {
           const a = state.simNodes[i];
+          // Latent-space drift: gentle per-node oscillation after settling
+          if (!settling) {
+            const phase = i * 2.39996; // golden angle
+            a.vx += Math.sin(time * 0.12 + phase) * 0.04;
+            a.vy += Math.cos(time * 0.09 + phase * 1.3) * 0.03;
+            a.vz += Math.sin(time * 0.11 + phase * 0.7) * 0.04;
+          }
           for (let j = i + 1; j < state.simNodes.length; j++) {
             const b = state.simNodes[j];
             const dx = a.x - b.x;
@@ -304,33 +297,6 @@ export function Topology3D({
         }
       }
 
-      // Spawn particles
-      if (showParticles && state.frame % 3 === 0 && state.particles.length < 60) {
-        const srcNode = state.simNodes[Math.floor(Math.random() * state.simNodes.length)];
-        if (srcNode) {
-          state.particles.push({
-            x: srcNode.x + (Math.random() - 0.5) * 10,
-            y: srcNode.y + (Math.random() - 0.5) * 10,
-            z: srcNode.z + (Math.random() - 0.5) * 10,
-            vx: (Math.random() - 0.5) * 0.5,
-            vy: -0.3 - Math.random() * 0.3,
-            vz: (Math.random() - 0.5) * 0.5,
-            life: 1,
-            maxLife: 60 + Math.random() * 60,
-            color: srcNode.color,
-          });
-        }
-      }
-
-      // Update particles
-      state.particles = state.particles.filter(p => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.z += p.vz;
-        p.life++;
-        return p.life < p.maxLife;
-      });
-
       // Clear
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, w, h);
@@ -371,22 +337,6 @@ export function Topology3D({
         }
       }
 
-      // Draw particles (behind nodes)
-      for (const p of state.particles) {
-        const proj = project(p, w, h, camAngle, camTilt);
-        if (proj.z <= 0) continue;
-        const lifeRatio = 1 - p.life / p.maxLife;
-        const r = Math.max(0.5, 1.5 * proj.scale * lifeRatio);
-        ctx.globalAlpha = lifeRatio * 0.4;
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 4;
-        ctx.beginPath();
-        ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.shadowBlur = 0;
-
       // Project all nodes for depth sorting
       const projected = state.simNodes.map((n, i) => ({
         idx: i,
@@ -397,8 +347,7 @@ export function Topology3D({
       // Sort by depth (far to near)
       projected.sort((a, b) => b.proj.z - a.proj.z);
 
-      // Draw edges
-      ctx.lineWidth = 1;
+      // Draw edges — double-stroke for glow without shadowBlur
       for (const edge of inputEdges) {
         const ai = edgeMap.get(edge.source);
         const bi = edgeMap.get(edge.target);
@@ -410,20 +359,28 @@ export function Topology3D({
         if (pa.z <= 0 || pb.z <= 0) continue;
 
         const avgZ = (pa.z + pb.z) / 2;
-        const depthAlpha = Math.max(0.05, Math.min(0.6, 400 / avgZ)) * (edge.strength || 0.5);
+        const strength = edge.strength || 0.5;
+        const depthAlpha = Math.max(0.05, Math.min(0.6, 400 / avgZ)) * strength;
 
-        ctx.globalAlpha = depthAlpha;
+        // Outer glow pass (wide, transparent)
+        ctx.globalAlpha = depthAlpha * 0.25;
         ctx.strokeStyle = a.color;
-        ctx.shadowColor = a.color;
-        ctx.shadowBlur = 3;
+        ctx.lineWidth = 3 + strength * 2;
+        ctx.beginPath();
+        ctx.moveTo(pa.x, pa.y);
+        ctx.lineTo(pb.x, pb.y);
+        ctx.stroke();
+
+        // Core line
+        ctx.globalAlpha = depthAlpha;
+        ctx.lineWidth = 0.8 + strength * 0.6;
         ctx.beginPath();
         ctx.moveTo(pa.x, pa.y);
         ctx.lineTo(pb.x, pb.y);
         ctx.stroke();
       }
-      ctx.shadowBlur = 0;
 
-      // Draw nodes
+      // Draw nodes — multi-pass glow without shadowBlur
       for (const item of projected) {
         const { node, proj } = item;
         if (proj.z <= 0) continue;
@@ -436,25 +393,28 @@ export function Topology3D({
           ? 1 + 0.3 * Math.sin(state.frame * 0.08 + item.idx)
           : 1;
 
-        // Outer glow
-        ctx.globalAlpha = depthAlpha * 0.2 * pulseScale;
         ctx.fillStyle = node.color;
-        ctx.shadowColor = node.color;
-        ctx.shadowBlur = 15;
+
+        // Outer glow (wide, faint)
+        ctx.globalAlpha = depthAlpha * 0.08 * pulseScale;
         ctx.beginPath();
-        ctx.arc(proj.x, proj.y, r * 2.5 * pulseScale, 0, Math.PI * 2);
+        ctx.arc(proj.x, proj.y, r * 3.5 * pulseScale, 0, Math.PI * 2);
         ctx.fill();
 
         // Mid glow
-        ctx.globalAlpha = depthAlpha * 0.4;
-        ctx.shadowBlur = 8;
+        ctx.globalAlpha = depthAlpha * 0.15 * pulseScale;
         ctx.beginPath();
-        ctx.arc(proj.x, proj.y, r * 1.5, 0, Math.PI * 2);
+        ctx.arc(proj.x, proj.y, r * 2.2 * pulseScale, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Inner glow
+        ctx.globalAlpha = depthAlpha * 0.35;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, r * 1.4, 0, Math.PI * 2);
         ctx.fill();
 
         // Core
-        ctx.globalAlpha = depthAlpha;
-        ctx.shadowBlur = 4;
+        ctx.globalAlpha = depthAlpha * 0.95;
         ctx.beginPath();
         ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
         ctx.fill();
@@ -462,7 +422,6 @@ export function Topology3D({
         // Bright center
         ctx.globalAlpha = depthAlpha * 0.8;
         ctx.fillStyle = '#fff';
-        ctx.shadowBlur = 0;
         ctx.beginPath();
         ctx.arc(proj.x, proj.y, r * 0.3, 0, Math.PI * 2);
         ctx.fill();
@@ -471,14 +430,11 @@ export function Topology3D({
         if (node.label && r > 3) {
           ctx.globalAlpha = depthAlpha * 0.9;
           ctx.fillStyle = '#FF6600';
-          ctx.shadowColor = '#FF6600';
-          ctx.shadowBlur = 2;
           ctx.font = `${Math.max(8, Math.min(11, r * 1.5))}px 'Share Tech Mono', monospace`;
           ctx.textAlign = 'center';
           ctx.fillText(node.label, proj.x, proj.y - r - 5);
         }
       }
-      ctx.shadowBlur = 0;
 
       // Draw vertical lines from nodes to grid
       if (showGrid) {
@@ -523,7 +479,7 @@ export function Topology3D({
       cancelAnimationFrame(animId);
       ro.disconnect();
     };
-  }, [inputNodes, inputEdges, height, color, gridColor, rotationSpeed, showGrid, showParticles, project]);
+  }, [inputNodes, inputEdges, height, color, gridColor, rotationSpeed, showGrid, project]);
 
   // Mouse drag-to-orbit and scroll-to-zoom
   useEffect(() => {

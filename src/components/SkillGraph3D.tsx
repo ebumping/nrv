@@ -1,11 +1,12 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useMemo } from 'react';
 
 /**
- * SkillGraph3D - Layered 3D skill topology visualization
+ * SkillGraph3D - Neural Mapping Topology
  *
- * Blue wireframe mesh at the base with orange connection arcs that
- * wrap and unwrap over time to show cluster relations. Side bar
- * panels show activity. Reference: NERV MAGI neural topology display.
+ * Dynamic wireframe grid that scales with cluster count. Connections render
+ * as helically-twisted wire bundles — tight twist = strong correlation,
+ * loose splay = weak. High-connectivity hub nodes sprout organic tendrils.
+ * Side panels show activity readouts.
  */
 
 export interface SkillNode3D {
@@ -37,69 +38,105 @@ export interface SkillGraph3DProps {
 interface Vec3 { x: number; y: number; z: number; }
 interface Projected { x: number; y: number; z: number; scale: number; }
 
+// === DEFAULT DATA (spawning_pool themed) ===
+
 const DEFAULT_NODES: SkillNode3D[] = [
-  // Base grid nodes - spread across the mesh
-  { id: 's1', label: '1', gridX: 0.15, gridZ: 0.2, layer: 0 },
-  { id: 's2', label: '2', gridX: 0.35, gridZ: 0.15, layer: 0 },
-  { id: 's3', label: '3', gridX: 0.55, gridZ: 0.25, layer: 0 },
-  { id: 's4', label: '4', gridX: 0.75, gridZ: 0.2, layer: 0 },
-  { id: 's5', label: '5', gridX: 0.2, gridZ: 0.5, layer: 0 },
-  { id: 's6', label: '6', gridX: 0.45, gridZ: 0.45, layer: 0 },
-  { id: 's7', label: '7', gridX: 0.65, gridZ: 0.5, layer: 0 },
-  { id: 's8', label: '8', gridX: 0.85, gridZ: 0.45, layer: 0 },
-  { id: 's9', label: '9', gridX: 0.3, gridZ: 0.75, layer: 0 },
-  { id: 's10', label: '0', gridX: 0.5, gridZ: 0.7, layer: 0 },
-  { id: 's11', label: '1', gridX: 0.7, gridZ: 0.75, layer: 0 },
-  { id: 's12', label: '2', gridX: 0.9, gridZ: 0.7, layer: 0 },
-  // Elevated nodes - spread wide above
-  { id: 'h1', label: 'CORE', layer: 1, color: '#FF6600' },
-  { id: 'h2', label: 'EXEC', layer: 1, color: '#FF6600' },
-  { id: 'h3', label: 'NET', layer: 2, color: '#FF4400' },
-  { id: 'h4', label: 'MEM', layer: 1, color: '#FF6600' },
-  { id: 'h5', label: 'SYNC', layer: 2, color: '#FF4400' },
-  { id: 'h6', label: 'I/O', layer: 1, color: '#FF6600' },
-  { id: 'h7', label: 'PROC', layer: 2, color: '#FF4400' },
-  { id: 'h8', label: 'LINK', layer: 1, color: '#FF6600' },
+  // Base clusters — grid points representing skill groups
+  { id: 'soceng', label: 'SOCENG', gridX: 0.12, gridZ: 0.18, layer: 0 },
+  { id: 'opsec', label: 'OPSEC', gridX: 0.32, gridZ: 0.12, layer: 0 },
+  { id: 'persona', label: 'PERSONA', gridX: 0.52, gridZ: 0.22, layer: 0 },
+  { id: 'comms', label: 'COMMS', gridX: 0.72, gridZ: 0.15, layer: 0 },
+  { id: 'intel', label: 'INTEL', gridX: 0.18, gridZ: 0.42, layer: 0 },
+  { id: 'craft', label: 'CRAFT', gridX: 0.42, gridZ: 0.38, layer: 0 },
+  { id: 'adapt', label: 'ADAPT', gridX: 0.62, gridZ: 0.42, layer: 0 },
+  { id: 'persist', label: 'PERSIST', gridX: 0.82, gridZ: 0.35, layer: 0 },
+  { id: 'network', label: 'NETWORK', gridX: 0.25, gridZ: 0.62, layer: 0 },
+  { id: 'recon', label: 'RECON', gridX: 0.48, gridZ: 0.58, layer: 0 },
+  { id: 'lang', label: 'LANG', gridX: 0.68, gridZ: 0.62, layer: 0 },
+  { id: 'visual', label: 'VISUAL', gridX: 0.88, gridZ: 0.55, layer: 0 },
+  { id: 'sched', label: 'SCHED', gridX: 0.15, gridZ: 0.82, layer: 0 },
+  { id: 'track', label: 'TRACK', gridX: 0.38, gridZ: 0.78, layer: 0 },
+  { id: 'evade', label: 'EVADE', gridX: 0.58, gridZ: 0.82, layer: 0 },
+  { id: 'infil', label: 'INFIL', gridX: 0.78, gridZ: 0.78, layer: 0 },
+  // Elevated hubs — command layer
+  { id: 'core', label: 'CORE', layer: 1, color: '#FF6600' },
+  { id: 'exec', label: 'EXEC', layer: 1, color: '#FF6600' },
+  { id: 'sigint', label: 'SIGINT', layer: 1, color: '#FF6600' },
+  { id: 'humint', label: 'HUMINT', layer: 1, color: '#FF6600' },
+  { id: 'c2', label: 'C2', layer: 2, color: '#FF4400' },
+  { id: 'cogwar', label: 'COGWAR', layer: 2, color: '#FF4400' },
 ];
 
 const DEFAULT_EDGES: SkillEdge3D[] = [
-  { source: 's1', target: 'h1', strength: 0.8 },
-  { source: 's2', target: 'h1', strength: 0.6 },
-  { source: 's3', target: 'h2', strength: 0.7 },
-  { source: 's4', target: 'h3', strength: 0.5 },
-  { source: 's5', target: 'h2', strength: 0.6 },
-  { source: 's6', target: 'h4', strength: 0.4 },
-  { source: 's7', target: 'h3', strength: 0.7 },
-  { source: 's8', target: 'h5', strength: 0.5 },
-  { source: 's9', target: 'h6', strength: 0.6 },
-  { source: 's10', target: 'h7', strength: 0.5 },
-  { source: 's11', target: 'h8', strength: 0.6 },
-  { source: 's12', target: 'h5', strength: 0.4 },
-  { source: 's1', target: 'h3', strength: 0.3 },
-  { source: 's3', target: 'h5', strength: 0.5 },
-  { source: 's5', target: 'h7', strength: 0.4 },
-  { source: 's2', target: 'h4', strength: 0.3 },
-  { source: 's7', target: 'h1', strength: 0.4 },
-  { source: 's4', target: 'h6', strength: 0.3 },
-  { source: 's6', target: 'h8', strength: 0.5 },
-  { source: 's8', target: 'h1', strength: 0.3 },
-  { source: 's9', target: 'h2', strength: 0.4 },
-  { source: 's10', target: 'h4', strength: 0.3 },
-  { source: 's11', target: 'h3', strength: 0.5 },
-  { source: 's12', target: 'h7', strength: 0.4 },
+  // Strong correlations — tight helix
+  { source: 'soceng', target: 'humint', strength: 0.9 },
+  { source: 'persona', target: 'humint', strength: 0.85 },
+  { source: 'opsec', target: 'exec', strength: 0.8 },
+  { source: 'intel', target: 'sigint', strength: 0.85 },
+  { source: 'recon', target: 'sigint', strength: 0.8 },
+  { source: 'comms', target: 'c2', strength: 0.75 },
+  { source: 'infil', target: 'humint', strength: 0.8 },
+  { source: 'evade', target: 'opsec', strength: 0.75 },
+  // Medium correlations
+  { source: 'craft', target: 'cogwar', strength: 0.7 },
+  { source: 'network', target: 'humint', strength: 0.7 },
+  { source: 'persona', target: 'cogwar', strength: 0.7 },
+  { source: 'persist', target: 'exec', strength: 0.65 },
+  { source: 'track', target: 'sigint', strength: 0.65 },
+  { source: 'adapt', target: 'core', strength: 0.6 },
+  { source: 'soceng', target: 'cogwar', strength: 0.6 },
+  { source: 'opsec', target: 'sigint', strength: 0.55 },
+  { source: 'lang', target: 'cogwar', strength: 0.55 },
+  { source: 'visual', target: 'craft', strength: 0.5 },
+  { source: 'intel', target: 'core', strength: 0.5 },
+  { source: 'comms', target: 'humint', strength: 0.5 },
+  { source: 'sched', target: 'exec', strength: 0.5 },
+  // Weak correlations — loose splay
+  { source: 'network', target: 'core', strength: 0.45 },
+  { source: 'infil', target: 'exec', strength: 0.45 },
+  { source: 'adapt', target: 'cogwar', strength: 0.4 },
+  { source: 'lang', target: 'humint', strength: 0.4 },
+  { source: 'track', target: 'core', strength: 0.35 },
+  { source: 'visual', target: 'cogwar', strength: 0.35 },
+  { source: 'sched', target: 'c2', strength: 0.3 },
+  // Hub interconnections
+  { source: 'core', target: 'c2', strength: 0.9 },
+  { source: 'exec', target: 'c2', strength: 0.85 },
+  { source: 'sigint', target: 'core', strength: 0.7 },
+  { source: 'humint', target: 'cogwar', strength: 0.75 },
+  { source: 'humint', target: 'core', strength: 0.6 },
 ];
 
 export function SkillGraph3D({
   height = 500,
   nodes: inputNodes = DEFAULT_NODES,
   edges: inputEdges = DEFAULT_EDGES,
-  gridResolution = 14,
+  gridResolution,
   rotationSpeed = 0.003,
   showSidePanels = true,
   className,
 }: SkillGraph3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic grid sizing: more clusters = bigger grid
+  const baseNodeCount = useMemo(
+    () => inputNodes.filter(n => (n.layer || 0) === 0).length,
+    [inputNodes]
+  );
+  const effectiveGridRes = gridResolution || Math.max(10, Math.ceil(Math.sqrt(baseNodeCount) * 2.5));
+  const effectiveSpread = Math.max(120, Math.min(400, baseNodeCount * 12));
+
+  // Connectivity per node (for tendril generation + node sizing)
+  const connectivity = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const e of inputEdges) {
+      map.set(e.source, (map.get(e.source) || 0) + 1);
+      map.set(e.target, (map.get(e.target) || 0) + 1);
+    }
+    return map;
+  }, [inputEdges]);
+
   const stateRef = useRef<{
     cameraAngle: number;
     cameraTilt: number;
@@ -124,10 +161,11 @@ export function SkillGraph3D({
     zoomLevel: 1,
   });
 
+  // Generate heightmap (regenerates when grid resolution changes)
   useEffect(() => {
     const state = stateRef.current;
+    const res = effectiveGridRes;
     const map: number[][] = [];
-    const res = gridResolution;
     for (let z = 0; z <= res; z++) {
       map[z] = [];
       for (let x = 0; x <= res; x++) {
@@ -141,7 +179,7 @@ export function SkillGraph3D({
     }
     state.heightMap = map;
     state.barValues = Array.from({ length: 32 }, () => 0.2 + Math.random() * 0.8);
-  }, [gridResolution]);
+  }, [effectiveGridRes]);
 
   const project = useCallback((point: Vec3, w: number, h: number, camAngle: number): Projected => {
     const fov = 380;
@@ -169,6 +207,7 @@ export function SkillGraph3D({
     };
   }, []);
 
+  // Main render loop
   useEffect(() => {
     const canvas = canvasRef.current;
     const container = containerRef.current;
@@ -179,6 +218,8 @@ export function SkillGraph3D({
 
     let animId: number;
     const state = stateRef.current;
+    const spread = effectiveSpread;
+    const res = effectiveGridRes;
 
     const resizeCanvas = () => {
       const rect = container.getBoundingClientRect();
@@ -202,13 +243,13 @@ export function SkillGraph3D({
     const ro = new ResizeObserver(resizeCanvas);
     ro.observe(container);
 
+    // Node position calculator
     const getNodePos = (node: SkillNode3D, time: number): Vec3 => {
-      const spread = 120;
-      if (node.layer === 0) {
+      if ((node.layer || 0) === 0) {
         const gx = (node.gridX ?? 0.5) - 0.5;
         const gz = (node.gridZ ?? 0.5) - 0.5;
-        const mx = Math.min(gridResolution, Math.floor((node.gridX ?? 0.5) * gridResolution));
-        const mz = Math.min(gridResolution, Math.floor((node.gridZ ?? 0.5) * gridResolution));
+        const mx = Math.min(res, Math.floor((node.gridX ?? 0.5) * res));
+        const mz = Math.min(res, Math.floor((node.gridZ ?? 0.5) * res));
         const meshH = state.heightMap[mz]?.[mx] || 0;
         return {
           x: gx * spread * 2,
@@ -216,41 +257,45 @@ export function SkillGraph3D({
           z: gz * spread * 2,
         };
       } else {
-        // Elevated nodes: spread wide across the space
-        const elevatedNodes = inputNodes.filter(n => (n.layer || 0) > 0);
-        const idx = elevatedNodes.indexOf(node);
-        const count = elevatedNodes.length;
-        // Use wider spread, not circular - distribute across width
+        const elevated = inputNodes.filter(n => (n.layer || 0) > 0);
+        const idx = elevated.indexOf(node);
         const golden = 0.618033988749895;
-        const spreadAngle = ((idx * golden) % 1) * Math.PI * 2;
-        const r = 40 + (node.layer || 1) * 30 + ((idx * golden * 7) % 1) * 30;
+        const angle = ((idx * golden) % 1) * Math.PI * 2;
+        const r = spread * 0.4 + (node.layer || 1) * 30 + ((idx * golden * 7) % 1) * 30;
         const yBase = -90 - (node.layer || 1) * 50;
-        // Gentle sway
-        const sway = Math.sin(time * 0.3 + idx * 1.7) * 8;
+        const sway = Math.sin(time * 0.15 + idx * 1.7) * 3;
         return {
-          x: Math.cos(spreadAngle) * r + sway,
-          y: yBase + Math.sin(time * 0.4 + idx * 0.9) * 4,
-          z: Math.sin(spreadAngle) * r,
+          x: Math.cos(angle) * r + sway,
+          y: yBase + Math.sin(time * 0.2 + idx * 0.9) * 1.5,
+          z: Math.sin(angle) * r,
         };
       }
     };
 
-    // Draw animated arc that wraps/unwraps
+    // === CONNECTION ARC — strength is structural, animation is breath ===
     const drawArc3D = (
       from: Vec3, to: Vec3,
       w: number, h: number, camAngle: number,
       arcColor: string, strength: number,
       edgeIdx: number, time: number
     ) => {
-      const segments = 28;
-      // Animated control points - arcs wrap and unwrap over time
-      const phase = time * 0.15 + edgeIdx * 0.7;
-      const wrapAmount = 0.5 + Math.sin(phase) * 0.4; // 0.1 to 0.9
-      const lateralSway = Math.sin(phase * 0.7 + edgeIdx * 1.3) * 40;
+      const segments = 16;
+      const wrapAmount = strength;
+      const basePhase = edgeIdx * 0.7;
+      const pulse = 0.5 + 0.25 * Math.sin(time * 0.2 + basePhase);
 
-      const midX = (from.x + to.x) / 2 + lateralSway * wrapAmount;
-      const midZ = (from.z + to.z) / 2 + Math.cos(phase * 0.5) * 30 * wrapAmount;
-      const arcHeight = Math.min(from.y, to.y) - 30 - Math.abs(from.y - to.y) * 0.3 - wrapAmount * 40;
+      const swayMag = 45 + 135 * pulse;
+      const zMag = 35 + 105 * pulse;
+      const hMag = 40 + 120 * pulse;
+
+      const lateralSway = Math.sin(time * 0.35 + basePhase + edgeIdx * 1.3) * swayMag * strength;
+
+      const midX = (from.x + to.x) / 2 + lateralSway;
+      const midZ = (from.z + to.z) / 2 + Math.cos(time * 0.28 + basePhase) * zMag * strength;
+      const rawArcHeight = Math.min(from.y, to.y) - 30 - Math.abs(from.y - to.y) * 0.3
+        - wrapAmount * 40 - Math.sin(time * 0.24 + basePhase) * 1.22 * hMag;
+      // Never let arcs dip below the topology grid (y ≈ 15)
+      const arcHeight = Math.min(rawArcHeight, 10);
 
       const points: Projected[] = [];
       for (let i = 0; i <= segments; i++) {
@@ -271,38 +316,37 @@ export function SkillGraph3D({
         points.push(project({ x: px, y: py, z: pz }, w, h, camAngle));
       }
 
-      // Draw the arc with depth-aware opacity
+      const avgZ = points.reduce((s, p) => s + p.z, 0) / points.length;
+      const depthAlpha = Math.max(0.15, Math.min(0.7, 450 / avgZ));
+
+      // Glow pass — wider, fainter stroke for bloom effect (no shadowBlur)
       ctx.beginPath();
       let started = false;
       for (const p of points) {
         if (p.z <= 0) { started = false; continue; }
-        if (!started) {
-          ctx.moveTo(p.x, p.y);
-          started = true;
-        } else {
-          ctx.lineTo(p.x, p.y);
-        }
+        if (!started) { ctx.moveTo(p.x, p.y); started = true; }
+        else ctx.lineTo(p.x, p.y);
       }
-      const avgZ = points.reduce((s, p) => s + p.z, 0) / points.length;
-      const depthAlpha = Math.max(0.15, Math.min(0.7, 450 / avgZ));
       ctx.strokeStyle = arcColor;
+      ctx.lineWidth = 3 + strength * 3;
+      ctx.globalAlpha = depthAlpha * (0.08 + strength * 0.06);
+      ctx.stroke();
+
+      // Core pass
       ctx.lineWidth = 0.8 + strength * 1.2;
       ctx.globalAlpha = depthAlpha * (0.4 + strength * 0.3);
-      ctx.shadowColor = arcColor;
-      ctx.shadowBlur = 5;
       ctx.stroke();
-      ctx.shadowBlur = 0;
     };
 
+    // === MAIN RENDER LOOP ===
     const render = () => {
       const w = state.width;
       const h = height;
       state.frame++;
-      if (!state.dragStart) state.cameraAngle += rotationSpeed;
+      if (!state.dragStart) state.cameraAngle += rotationSpeed * 0.7;
       const time = state.frame * 0.02;
       const camAngle = state.cameraAngle;
 
-      // Clip to bounds
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, w, h);
@@ -317,10 +361,7 @@ export function SkillGraph3D({
         return;
       }
 
-      const spread = 120;
-      const res = gridResolution;
-
-      // === SIDE PANELS (draw first, behind everything) ===
+      // === SIDE PANELS ===
       if (showSidePanels) {
         if (state.frame % 8 === 0) {
           for (let i = 0; i < state.barValues.length; i++) {
@@ -335,13 +376,12 @@ export function SkillGraph3D({
         const panelBars = 16;
         const panelTotalH = panelBars * (barH + barGap);
         const panelMargin = 8;
+        const lpy = (h - panelTotalH) / 2;
 
         // Left panel
-        const lpy = (h - panelTotalH) / 2;
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = '#FF6600';
         ctx.fillRect(panelMargin - 1, lpy - 6, panelW + 2, panelTotalH + 12);
-
         for (let i = 0; i < panelBars; i++) {
           const val = state.barValues[i];
           const y = lpy + i * (barH + barGap);
@@ -350,18 +390,14 @@ export function SkillGraph3D({
           ctx.fillRect(panelMargin, y, panelW, barH);
           ctx.globalAlpha = 0.6 + val * 0.4;
           ctx.fillStyle = val > 0.7 ? '#FF6600' : val > 0.4 ? '#FF8800' : '#FFAA00';
-          ctx.shadowColor = '#FF6600';
-          ctx.shadowBlur = 3;
           ctx.fillRect(panelMargin, y, panelW * val, barH);
         }
 
         // Right panel
         const rpx = w - panelMargin - panelW;
-        ctx.shadowBlur = 0;
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = '#FF6600';
         ctx.fillRect(rpx - 1, lpy - 6, panelW + 2, panelTotalH + 12);
-
         for (let i = 0; i < panelBars; i++) {
           const val = state.barValues[i + panelBars];
           const y = lpy + i * (barH + barGap);
@@ -370,14 +406,11 @@ export function SkillGraph3D({
           ctx.fillRect(rpx, y, panelW, barH);
           ctx.globalAlpha = 0.6 + val * 0.4;
           ctx.fillStyle = val > 0.7 ? '#FF6600' : val > 0.4 ? '#FF8800' : '#FFAA00';
-          ctx.shadowColor = '#FF6600';
-          ctx.shadowBlur = 3;
           ctx.fillRect(rpx, y, panelW * val, barH);
         }
-        ctx.shadowBlur = 0;
       }
 
-      // === BLUE WIREFRAME MESH ===
+      // === BLUE WIREFRAME MESH (scales with cluster count) ===
       const projGrid: Projected[][] = [];
       for (let z = 0; z <= res; z++) {
         projGrid[z] = [];
@@ -386,12 +419,11 @@ export function SkillGraph3D({
           const nz = (z / res - 0.5) * spread * 2;
           const baseH = state.heightMap[z]?.[x] || 0;
           const animH = baseH + Math.sin(x * 0.4 + time * 0.8) * Math.cos(z * 0.3 + time * 0.5) * 0.2;
-          const ny = animH * 18 + 15;
-          projGrid[z][x] = project({ x: nx, y: ny, z: nz }, w, h, camAngle);
+          projGrid[z][x] = project({ x: nx, y: animH * 18 + 15, z: nz }, w, h, camAngle);
         }
       }
 
-      // Mesh lines X
+      // Mesh lines along X
       for (let z = 0; z <= res; z++) {
         ctx.beginPath();
         let started = false;
@@ -406,7 +438,7 @@ export function SkillGraph3D({
         }
         ctx.stroke();
       }
-      // Mesh lines Z
+      // Mesh lines along Z
       for (let x = 0; x <= res; x++) {
         ctx.beginPath();
         let started = false;
@@ -422,11 +454,11 @@ export function SkillGraph3D({
         ctx.stroke();
       }
 
-      // Grid numbers
+      // Grid intersection numbers
       ctx.font = "7px 'Share Tech Mono', monospace";
       ctx.textAlign = 'center';
-      for (let z = 0; z <= res; z += 2) {
-        for (let x = 0; x <= res; x += 2) {
+      for (let z = 0; z <= res; z += 3) {
+        for (let x = 0; x <= res; x += 3) {
           const p = projGrid[z][x];
           if (p.z <= 0) continue;
           ctx.globalAlpha = Math.max(0.15, Math.min(0.65, 350 / p.z));
@@ -441,19 +473,15 @@ export function SkillGraph3D({
         nodePositions.set(node.id, getNodePos(node, time));
       }
 
-      // === DRAW CONNECTION ARCS (with wrap/unwrap animation) ===
+      // === DRAW CONNECTION ARCS (wrap/unwrap animation modulated by strength) ===
       for (let ei = 0; ei < inputEdges.length; ei++) {
         const edge = inputEdges[ei];
         const fromPos = nodePositions.get(edge.source);
         const toPos = nodePositions.get(edge.target);
         if (!fromPos || !toPos) continue;
-
         drawArc3D(
-          fromPos, toPos,
-          w, h, camAngle,
-          '#FF5500',
-          edge.strength || 0.5,
-          ei, time
+          fromPos, toPos, w, h, camAngle,
+          '#FF5500', edge.strength || 0.5, ei, time
         );
       }
 
@@ -468,20 +496,28 @@ export function SkillGraph3D({
         const depthAlpha = Math.max(0.3, Math.min(1, 450 / proj.z));
         const isBase = (node.layer || 0) === 0;
         const nodeColor = node.color || '#FF8800';
-        const r = isBase ? Math.max(2, 2.5 * proj.scale) : Math.max(3, 4.5 * proj.scale);
+        const conn = connectivity.get(node.id) || 0;
+        const connScale = 1 + Math.min(conn, 8) * 0.08;
+        const r = isBase
+          ? Math.max(2, 2.5 * proj.scale * connScale)
+          : Math.max(3, 4.5 * proj.scale * connScale);
 
-        // Outer glow
-        ctx.globalAlpha = depthAlpha * 0.2;
         ctx.fillStyle = nodeColor;
-        ctx.shadowColor = nodeColor;
-        ctx.shadowBlur = isBase ? 6 : 12;
+
+        // Outer glow (no shadowBlur)
+        ctx.globalAlpha = depthAlpha * 0.08;
         ctx.beginPath();
-        ctx.arc(proj.x, proj.y, r * 2.5, 0, Math.PI * 2);
+        ctx.arc(proj.x, proj.y, r * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mid glow
+        ctx.globalAlpha = depthAlpha * 0.2;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, r * 1.8, 0, Math.PI * 2);
         ctx.fill();
 
         // Core
         ctx.globalAlpha = depthAlpha * 0.9;
-        ctx.shadowBlur = 5;
         ctx.beginPath();
         ctx.arc(proj.x, proj.y, r, 0, Math.PI * 2);
         ctx.fill();
@@ -490,27 +526,25 @@ export function SkillGraph3D({
         if (node.label) {
           ctx.globalAlpha = depthAlpha * 0.8;
           ctx.fillStyle = isBase ? '#FFFFFF' : '#FF8800';
-          ctx.shadowColor = nodeColor;
-          ctx.shadowBlur = 2;
           ctx.font = isBase ? "7px 'Share Tech Mono', monospace" : "9px 'Share Tech Mono', monospace";
           ctx.textAlign = 'center';
           ctx.fillText(node.label, proj.x, proj.y - r - 3);
         }
       }
 
-      ctx.shadowBlur = 0;
-
-      // Green floating data points
-      ctx.fillStyle = '#00FF66';
-      for (let i = 0; i < 12; i++) {
-        ctx.globalAlpha = 0.3 + Math.sin(time * 0.4 + i * 2) * 0.15;
-        const px = 48 + Math.sin(time * 0.25 + i * 1.2) * 25;
-        const py = 15 + i * 10 + Math.cos(time * 0.35 + i * 0.8) * 4;
-        ctx.fillRect(px, py, 2, 2);
-        // Mirror on right
-        const rpx = w - 48 + Math.sin(time * 0.3 + i * 1.5) * 20;
-        ctx.fillRect(rpx, py, 2, 2);
-      }
+      // Grid scaling readout
+      ctx.globalAlpha = 0.5;
+      ctx.font = "8px 'Share Tech Mono', monospace";
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#00CCFF';
+      ctx.fillText(`CLUSTERS:${baseNodeCount}`, 6, h - 30);
+      ctx.fillText(`GRID:${res}\u00D7${res}`, 6, h - 18);
+      ctx.fillText(`SPREAD:${spread.toFixed(0)}`, 6, h - 6);
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#FF6600';
+      ctx.fillText(`EDGES:${inputEdges.length}`, w - 6, h - 18);
+      ctx.fillStyle = '#666';
+      ctx.fillText(`FRAME:${state.frame}`, w - 6, h - 6);
 
       ctx.globalAlpha = 1;
       ctx.restore();
@@ -522,7 +556,7 @@ export function SkillGraph3D({
       cancelAnimationFrame(animId);
       ro.disconnect();
     };
-  }, [inputNodes, inputEdges, gridResolution, height, rotationSpeed, showSidePanels, project]);
+  }, [inputNodes, inputEdges, effectiveGridRes, effectiveSpread, height, rotationSpeed, showSidePanels, project, connectivity, baseNodeCount]);
 
   // Mouse drag-to-orbit and scroll-to-zoom
   useEffect(() => {

@@ -164,3 +164,6 @@ export type { HoloGlobeProps, GlobeMarker } from './components/HoloGlobe';
 
 export { HexGrid3D } from './components/HexGrid3D';
 export type { HexGrid3DProps, HexCell3D } from './components/HexGrid3D';
+
+export { TacticalDisplay } from './components/TacticalDisplay';
+export type { TacticalDisplayProps, TacticalUnit } from './components/TacticalDisplay';

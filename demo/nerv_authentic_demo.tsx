@@ -377,8 +377,6 @@ export function NERVAuthenticDemo() {
               nodes={topology3DNodes}
               edges={topology3DEdges}
               showGrid
-              showParticles
-              rotationSpeed={0.004}
             />
           </HUDFrame>
 
