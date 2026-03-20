@@ -59,6 +59,13 @@ import {
   StatusIndicator,
   HUDProgress,
   Blink,
+
+  // 3D Visualizations
+  Topology3D,
+  Terrain3D,
+  SkillGraph3D,
+  HoloGlobe,
+  HexGrid3D,
 } from '../src';
 
 // Also import the standalone AlertBanner with chevrons
@@ -93,6 +100,36 @@ const skillHexes: HexData[] = generateHexRadial(2).map((h, i) => ({
 const skillClusters = [
   { id: 'infra', hexIds: ['hex-1', 'hex-2', 'hex-3', 'hex-4'], label: 'INFRASTRUCTURE', color: '#00CCFF' },
   { id: 'dev', hexIds: ['hex-7', 'hex-8', 'hex-9', 'hex-10'], label: 'DEVELOPMENT', color: '#00FF66' },
+];
+
+// ─── 3D TOPOLOGY DATA (hoisted to avoid re-creation on re-render) ────────────
+
+const topology3DNodes = [
+  { id: 'a1', label: 'A1', color: '#00CCFF', pulse: true },
+  { id: 'a2', label: 'A2', color: '#00CCFF' },
+  { id: 'a3', label: 'A3', color: '#00FF66', pulse: true },
+  { id: 'a4', label: 'A4', color: '#00CCFF' },
+  { id: 'a5', label: 'A5', color: '#FF6600' },
+  { id: 'a6', label: 'A6', color: '#00CCFF', pulse: true },
+  { id: 'a7', label: 'A7', color: '#FF00CC' },
+];
+
+const topology3DEdges = [
+  { source: 'a1', target: 'a2', strength: 0.8 },
+  { source: 'a1', target: 'a3', strength: 0.6 },
+  { source: 'a2', target: 'a4', strength: 0.7 },
+  { source: 'a3', target: 'a5', strength: 0.5 },
+  { source: 'a4', target: 'a6', strength: 0.6 },
+  { source: 'a5', target: 'a7', strength: 0.4 },
+  { source: 'a6', target: 'a1', strength: 0.3 },
+  { source: 'a3', target: 'a6', strength: 0.5 },
+  { source: 'a2', target: 'a5', strength: 0.4 },
+  { source: 'a7', target: 'a4', strength: 0.3 },
+];
+
+const terrain3DBlips = [
+  { id: 'eva01', x: 0.35, z: 0.4, type: 'friendly' as const, label: 'EVA-01' },
+  { id: 'angel', x: 0.7, z: 0.3, type: 'hostile' as const, label: 'TARGET' },
 ];
 
 // ─── STYLES ──────────────────────────────────────────────────────────────────
@@ -325,7 +362,7 @@ export function NERVAuthenticDemo() {
             </div>
           </div>
 
-          {/* ═══ ROW 2: CONTOUR MAP (FULL WIDTH) ═══ */}
+          {/* ═══ ROW 2: 3D AGENT SWARM TOPOLOGY (FULL WIDTH) ═══ */}
           <div style={SPACER_2} />
           <HUDFrame
             label="AGENT SWARM TOPOLOGY"
@@ -333,25 +370,15 @@ export function NERVAuthenticDemo() {
             color="cyan"
             cornerBrackets
           >
-            <ContourMap
+            <Topology3D
               height={300}
-              contourColor="cyan"
-              contourDensity="dense"
-              showReferenceGrid
-              referenceLineCount={5}
-              showAxisScale
-              yAxisRange={[-100, 100]}
-              cornerReadouts={{
-                topLeft: '+ 00312794',
-                topRight: '00819652',
-                bottomLeft: '- 00327405',
-                bottomRight: '+ 00210745',
-              }}
-              nodes={swarmNodes}
-              nodeAnimation="breathe"
-              showCrosshairs
-              crosshairType="cross"
-              interactive
+              color="#00CCFF"
+              gridColor="#00CCFF"
+              nodes={topology3DNodes}
+              edges={topology3DEdges}
+              showGrid
+              showParticles={false}
+              rotationSpeed={0.004}
             />
           </HUDFrame>
 
@@ -455,18 +482,17 @@ export function NERVAuthenticDemo() {
           {/* ═══ ROW 5: TACTICAL + SYNC + HEX MATRIX ═══ */}
           <div style={SPACER_2} />
           <div style={GRID_3COL}>
-            {/* Wireframe terrain */}
+            {/* 3D Wireframe terrain */}
             <div style={CELL}>
               <HUDFrame label="GEOFRONT — TACTICAL" labelJp="ジオフロント" color="amber" cornerBrackets>
-                <WireframeTerrain
-                  width={600}
+                <Terrain3D
                   height={240}
-                  gridDensity={12}
+                  gridSize={28}
+                  heightScale={25}
+                  meshColor="#00FF66"
                   showContours
-                  blips={[
-                    { id: 'eva01', x: 150, y: 120, type: 'friendly', label: 'EVA-01' },
-                    { id: 'angel', x: 280, y: 80, type: 'hostile', label: 'TARGET' },
-                  ]}
+                  blips={terrain3DBlips}
+                  rotationSpeed={0.002}
                 />
               </HUDFrame>
             </div>
@@ -498,17 +524,15 @@ export function NERVAuthenticDemo() {
               </div>
             </div>
 
-            {/* Skill hex matrix */}
+            {/* 3D Globe monitor */}
             <div style={CELL}>
-              <HUDFrame label="SKILL TAXONOMY" labelJp="スキル分類" color="green" cornerBrackets>
-                <HexagonalCluster
-                  height={210}
-                  hexSize={22}
-                  borderColor="green"
-                  hexes={skillHexes}
-                  clusters={skillClusters}
-                  showLabels
-                  interactive
+              <HUDFrame label="GLOBAL MONITOR" labelJp="全球監視" color="amber" cornerBrackets>
+                <HoloGlobe
+                  height={240}
+                  wireColor="#FF8800"
+                  rotationSpeed={0.006}
+                  showGlow
+                  showEquator
                 />
               </HUDFrame>
             </div>
@@ -624,7 +648,41 @@ export function NERVAuthenticDemo() {
             </div>
           </div>
 
-          {/* ═══ ROW 9: CROSSHAIRS + HEX TARGET SMALL + TACTICAL MAP ═══ */}
+          {/* ═══ ROW 9: SKILL GRAPH 3D (FULL WIDTH) ═══ */}
+          <div style={SPACER_2} />
+          <HUDFrame
+            label="SKILL TOPOLOGY — NEURAL MAPPING"
+            labelJp="スキル・トポロジー・神経接続"
+            color="orange"
+            cornerBrackets
+            crosshairs
+          >
+            <SkillGraph3D
+              height={520}
+              gridResolution={14}
+              rotationSpeed={0.003}
+              showSidePanels
+            />
+          </HUDFrame>
+
+          {/* ═══ ROW 9b: HEX GRID 3D (FULL WIDTH) ═══ */}
+          <div style={SPACER_2} />
+          <HUDFrame
+            label="SKILL TAXONOMY — LAYERED HEX MATRIX"
+            labelJp="スキル分類・六角形マトリクス"
+            color="green"
+            cornerBrackets
+          >
+            <HexGrid3D
+              height={320}
+              layers={3}
+              hexSize={18}
+              rotationSpeed={0.005}
+              showConnections
+            />
+          </HUDFrame>
+
+          {/* ═══ ROW 10: CROSSHAIRS + HEX TARGET SMALL + TACTICAL MAP ═══ */}
           <div style={SPACER_2} />
           <div style={GRID_3COL}>
             <div style={CELL}>
