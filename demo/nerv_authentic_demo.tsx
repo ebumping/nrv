@@ -32,7 +32,6 @@ import {
 
   // Advanced displays
   Psychograph,
-  TacticalMap,
   StatusGrid,
   SyncRatioLarge,
   PatternIndicator,
@@ -66,6 +65,7 @@ import {
   SkillGraph3D,
   HoloGlobe,
   HexGrid3D,
+  TacticalDisplay,
 } from '../src';
 
 // Also import the standalone AlertBanner with chevrons
@@ -714,8 +714,8 @@ export function NERVAuthenticDemo() {
             </div>
 
             <div style={CELL}>
-              <NERVPanel title="TACTICAL MAP" titleJa="戦術マップ">
-                <TacticalMap width={600} height={200} />
+              <NERVPanel title="TACTICAL OPS" titleJa="戦術作戦">
+                <TacticalDisplay height={200} sectorLabel="TOKYO-3" />
               </NERVPanel>
             </div>
           </div>
