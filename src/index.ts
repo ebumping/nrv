@@ -167,3 +167,7 @@ export type { HexGrid3DProps, HexCell3D } from './components/HexGrid3D';
 
 export { TacticalDisplay } from './components/TacticalDisplay';
 export type { TacticalDisplayProps, TacticalUnit } from './components/TacticalDisplay';
+
+// Hexagonal Skill Matrix
+export { HexagonalSkillMatrix, MiniHexGrid, HexProgressRing } from './components/HexagonalSkillMatrix';
+export type { HexagonalSkillMatrixProps, SkillNode as HexSkillNode, MiniHexGridProps, HexProgressRingProps } from './components/HexagonalSkillMatrix';

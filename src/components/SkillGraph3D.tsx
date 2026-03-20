@@ -295,7 +295,9 @@ export function SkillGraph3D({
       const rawArcHeight = Math.min(from.y, to.y) - 30 - Math.abs(from.y - to.y) * 0.3
         - wrapAmount * 40 - Math.sin(time * 0.24 + basePhase) * 1.22 * hMag;
       // Never let arcs dip below the topology grid (y ≈ 15)
-      const arcHeight = Math.min(rawArcHeight, 10);
+      // const arcHeight = Math.min(rawArcHeight, 10);
+      const arcHeight = Math.min(rawArcHeight, 1.31);
+      // const arcHeight = Math.min(from.y, to.y) - 30 - Math.abs(from.y - to.y) * 0.3 - wrapAmount * 40;
 
       const points: Projected[] = [];
       for (let i = 0; i <= segments; i++) {

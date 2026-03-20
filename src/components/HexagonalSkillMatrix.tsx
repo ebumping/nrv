@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { NERVColors } from './NERVPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -15,6 +15,22 @@ export interface SkillNode {
   status: 'active' | 'inactive' | 'warning' | 'danger' | 'loading';
   confidence?: number;    // 0-100
   dependencies?: string[];
+  description?: string;
+  filePath?: string;
+  details?: {
+    overview: string;           // 2-3 sentence extended overview
+    capabilities: string[];     // what this skill enables
+    usage: string;              // when/how to invoke
+    integration?: string;       // how it connects to other skills
+    notes?: string;             // warnings, caveats, edge cases
+  };
+  reference?: {
+    synopsis: string;           // one-line technical summary
+    parameters?: string[];      // inputs, config options, flags
+    outputs?: string[];         // what this skill produces/emits
+    examples?: string[];        // example invocations or scenarios
+    relatedSkills?: string[];   // IDs of related skills for cross-ref
+  };
 }
 
 export interface HexagonalSkillMatrixProps {
@@ -38,7 +54,10 @@ export interface HexagonalSkillMatrixProps {
   
   /** On skill click */
   onSkillClick?: (skill: SkillNode) => void;
-  
+
+  /** On view skill file (eye icon click) */
+  onViewSkill?: (skill: SkillNode) => void;
+
   /** Compact mode - smaller text */
   compact?: boolean;
   
@@ -107,11 +126,14 @@ export function HexagonalSkillMatrix({
   showLayerLabels = true,
   selectedId,
   onSkillClick,
+  onViewSkill,
   compact = false,
   className,
 }: HexagonalSkillMatrixProps) {
   const [breathPhase, setBreathPhase] = useState(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   // Breathing animation
   useEffect(() => {
@@ -152,11 +174,24 @@ export function HexagonalSkillMatrix({
     return { active, warning, danger, total: skills.length, avgConfidence };
   }, [skills]);
   
+  const hoveredSkill = useMemo(() =>
+    hoveredId ? skills.find(s => s.id === hoveredId) : null,
+    [skills, hoveredId]
+  );
+
   const fontSize = compact ? 6 : 8;
   const labelFontSize = compact ? 5 : 6;
   
   return (
-    <div className={className} style={{ fontFamily: "'Courier New', monospace" }}>
+    <div
+      ref={containerRef}
+      className={className}
+      style={{ fontFamily: "'Courier New', monospace", position: 'relative' }}
+      onMouseMove={(e) => {
+        const rect = containerRef.current?.getBoundingClientRect();
+        if (rect) setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }}
+    >
       {/* Stats Header */}
       <div style={{
         display: 'flex',
@@ -274,11 +309,12 @@ export function HexagonalSkillMatrix({
               {/* Outer hexagon - layer color */}
               <polygon
                 points={generateHexPath(0, 0, hexRadius)}
-                fill="none"
-                stroke={isSelected ? NERVColors.white : layerColor}
-                strokeWidth={isSelected ? 2 : 1}
-                filter={isSelected ? 'url(#hex-skill-selected)' : skill.status === 'active' ? 'url(#hex-skill-glow)' : undefined}
-                opacity={isSelected ? 1 : isHovered ? 0.9 : 0.7}
+                fill={isHovered ? layerColor : 'none'}
+                fillOpacity={isHovered ? 0.15 : 0}
+                stroke={isSelected ? '#FFFFFF' : isHovered ? '#FFFFFF' : layerColor}
+                strokeWidth={isSelected ? 2 : isHovered ? 1.5 : 1}
+                filter={isSelected ? 'url(#hex-skill-selected)' : (skill.status === 'active' || isHovered) ? 'url(#hex-skill-glow)' : undefined}
+                opacity={isSelected ? 1 : isHovered ? 1 : 0.7}
               />
               
               {/* Inner hexagon - status color fill */}
@@ -357,29 +393,7 @@ export function HexagonalSkillMatrix({
                 </text>
               )}
               
-              {/* Hover tooltip */}
-              {isHovered && (
-                <g transform={`translate(${cellSize + 5}, 0)`}>
-                  <rect
-                    x={0}
-                    y={-20}
-                    width={80}
-                    height={40}
-                    fill={NERVColors.terminalBlack}
-                    stroke={statusColor}
-                    strokeWidth={1}
-                  />
-                  <text x={4} y={-8} fill={NERVColors.white} fontSize={8} fontWeight="bold">
-                    {skill.name}
-                  </text>
-                  <text x={4} y={2} fill={NERVColors.textDim} fontSize={6}>
-                    {layerNames[skill.layer]?.en} / {skill.category}
-                  </text>
-                  <text x={4} y={12} fill={statusColor} fontSize={7}>
-                    STATUS: {skill.status.toUpperCase()}
-                  </text>
-                </g>
-              )}
+              {/* Tooltip rendered as HTML overlay */}
             </g>
           );
         })}
@@ -391,7 +405,120 @@ export function HexagonalSkillMatrix({
           </text>
         </g>
       </svg>
-      
+
+      {/* Hover modal overlay */}
+      {hoveredSkill && mousePos && (() => {
+        const _statusColor = statusColors[hoveredSkill.status];
+        const _layerColor = layerColors[hoveredSkill.layer] || NERVColors.textDim;
+        const modalWidth = 280;
+        const containerWidth = containerRef.current?.offsetWidth || 800;
+        const modalLeft = mousePos.x + modalWidth + 20 > containerWidth
+          ? mousePos.x - modalWidth - 10
+          : mousePos.x + 16;
+        const modalTop = Math.max(8, mousePos.y - 40);
+
+        return (
+          <div style={{
+            position: 'absolute',
+            left: modalLeft,
+            top: modalTop,
+            width: modalWidth,
+            background: 'rgba(5, 5, 5, 0.96)',
+            border: `1px solid ${_layerColor}`,
+            borderLeft: `3px solid ${_layerColor}`,
+            padding: '10px 12px',
+            fontFamily: "'Courier New', monospace",
+            zIndex: 100,
+            pointerEvents: onViewSkill ? 'auto' : 'none',
+            boxShadow: `0 0 15px ${_layerColor}44, inset 0 0 30px rgba(0,0,0,0.6)`,
+          }}>
+            {/* Header row */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div>
+                <span style={{ color: '#E0FFE0', fontSize: 11, fontWeight: 'bold', letterSpacing: 1 }}>
+                  {hoveredSkill.name}
+                </span>
+                {hoveredSkill.nameJa && (
+                  <span style={{ color: NERVColors.textDim, fontSize: 9, marginLeft: 6 }}>
+                    {hoveredSkill.nameJa}
+                  </span>
+                )}
+              </div>
+              {onViewSkill && (
+                <span
+                  style={{
+                    color: _layerColor,
+                    fontSize: 18,
+                    cursor: 'pointer',
+                    textShadow: `0 0 8px ${_layerColor}`,
+                    lineHeight: 1,
+                  }}
+                  onClick={(e) => { e.stopPropagation(); onViewSkill(hoveredSkill); }}
+                  title="View full skill file"
+                >
+                  目
+                </span>
+              )}
+            </div>
+
+            {/* Layer / Category / Status */}
+            <div style={{
+              display: 'flex',
+              gap: 8,
+              marginBottom: 6,
+              fontSize: 8,
+              color: NERVColors.textDim,
+              borderBottom: `1px solid ${NERVColors.borderMid}`,
+              paddingBottom: 4,
+            }}>
+              <span style={{ color: _layerColor }}>
+                L{hoveredSkill.layer} {layerNames[hoveredSkill.layer]?.en}
+              </span>
+              <span>|</span>
+              <span>{hoveredSkill.category}</span>
+              <span>|</span>
+              <span style={{ color: _statusColor }}>
+                {hoveredSkill.status.toUpperCase()}
+              </span>
+              {hoveredSkill.confidence !== undefined && (
+                <>
+                  <span>|</span>
+                  <span style={{ color: NERVColors.phosphorCyan }}>
+                    {hoveredSkill.confidence}%
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Description */}
+            {hoveredSkill.description && (
+              <div style={{
+                color: '#AAAAAA',
+                fontSize: 9,
+                lineHeight: '14px',
+                maxHeight: 56,
+                overflow: 'hidden',
+              }}>
+                {hoveredSkill.description}
+              </div>
+            )}
+
+            {/* File path */}
+            {hoveredSkill.filePath && (
+              <div style={{
+                color: _layerColor,
+                fontSize: 7,
+                marginTop: 5,
+                opacity: 0.6,
+                letterSpacing: 0.5,
+              }}>
+                {'\u2192'} {hoveredSkill.filePath}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Layer summary bar */}
       {showLayerLabels && (
         <div style={{

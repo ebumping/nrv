@@ -5,7 +5,7 @@
  * ═══════════════════════════════════════════════════════════════════════
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   // Core frames & layout
   HUDFrame,
@@ -66,6 +66,9 @@ import {
   HoloGlobe,
   HexGrid3D,
   TacticalDisplay,
+
+  // Skill Matrix
+  HexagonalSkillMatrix,
 } from '../src';
 
 // Also import the standalone AlertBanner with chevrons
@@ -73,6 +76,8 @@ import { AlertBanner as ChevronAlertBanner } from '../src/components/AlertBanner
 // Standalone Psychograph with multiple types
 import { Psychograph as PsychographWave } from '../src/components/Psychograph';
 
+import { CLAUDE_SKILLS } from './skillData';
+import type { SkillNode } from '../src/components/HexagonalSkillMatrix';
 import '../src/styles.css';
 
 // ─── DATA ────────────────────────────────────────────────────────────────────
@@ -230,6 +235,9 @@ export function NERVAuthenticDemo() {
   const clock = useClock();
   const [syncValue, setSyncValue] = useState(94.2);
   const [contamination, setContamination] = useState(12);
+  const [selectedSkill, setSelectedSkill] = useState<SkillNode | null>(null);
+  const [detailPage, setDetailPage] = useState<'skill' | 'reference'>('skill');
+  const skillDetailRef = useRef<HTMLDivElement>(null);
 
   // Slowly drift values for realism
   useEffect(() => {
@@ -645,6 +653,343 @@ export function NERVAuthenticDemo() {
               </NERVPanel>
             </div>
           </div>
+
+          {/* ═══ ROW 8b: SKILL REGISTRY MATRIX (FULL WIDTH) ═══ */}
+          <div style={SPACER_2} />
+          <HUDFrame
+            label="SKILL REGISTRY — FULL MATRIX"
+            labelJp="スキル登録・完全マトリクス"
+            color="cyan"
+            cornerBrackets
+          >
+            <HexagonalSkillMatrix
+              skills={CLAUDE_SKILLS}
+              cellSize={42}
+              columns={8}
+              breathing
+              showLayerLabels
+              selectedId={selectedSkill?.id}
+              onSkillClick={(skill) => {
+                setSelectedSkill(prev => prev?.id === skill.id ? null : skill);
+                setDetailPage('skill');
+                setTimeout(() => skillDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+              }}
+              onViewSkill={(skill) => {
+                setSelectedSkill(skill);
+                setDetailPage('skill');
+                setTimeout(() => skillDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+              }}
+            />
+          </HUDFrame>
+
+          {/* ═══ SKILL DETAIL PANEL ═══ */}
+          {selectedSkill && (() => {
+            const layerColors: Record<number, string> = {
+              0: '#666666', 1: '#00CCFF', 2: '#39FF14', 3: '#FFAA00', 4: '#DC143C', 5: '#FF00FF',
+            };
+            const lc = layerColors[selectedSkill.layer] || '#666';
+            const layerNames: Record<number, string> = {
+              0: 'INFRA', 1: 'FOUNDATION', 2: 'CORE', 3: 'ADVANCED', 4: 'EXPERT', 5: 'STRATEGY',
+            };
+            const isRef = detailPage === 'reference';
+            const pageLabel = isRef ? 'reference.md' : 'skill.md';
+            return (
+              <div ref={skillDetailRef} style={{ padding: '0 2px' }}>
+                {/* Kanji glow keyframes */}
+                <style>{`
+                  @keyframes kanjiPulse {
+                    0%, 100% { text-shadow: 0 0 4px ${lc}44, 0 0 8px ${lc}22; color: #888; }
+                    50% { text-shadow: 0 0 10px ${lc}AA, 0 0 20px ${lc}66, 0 0 30px ${lc}33; color: ${lc}CC; }
+                  }
+                  @keyframes kanjiPulseActive {
+                    0%, 100% { text-shadow: 0 0 8px ${lc}AA, 0 0 16px ${lc}66; }
+                    50% { text-shadow: 0 0 14px ${lc}DD, 0 0 24px ${lc}88, 0 0 36px ${lc}44; }
+                  }
+                `}</style>
+                <div style={{
+                  border: `1px solid ${lc}`,
+                  borderLeft: `3px solid ${lc}`,
+                  background: 'rgba(5, 5, 8, 0.95)',
+                  padding: '12px 16px',
+                  fontFamily: "'Courier New', monospace",
+                  boxShadow: `0 0 20px ${lc}22, inset 0 0 40px rgba(0,0,0,0.5)`,
+                }}>
+                  {/* Header */}
+                  <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    borderBottom: `1px solid ${lc}44`, paddingBottom: 8, marginBottom: 8,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                      <span style={{ color: lc, fontSize: 18, fontWeight: 'bold', letterSpacing: 2, textShadow: `0 0 8px ${lc}` }}>
+                        {selectedSkill.name}
+                      </span>
+                      {selectedSkill.nameJa && (
+                        <span
+                          onClick={() => setDetailPage(isRef ? 'skill' : 'reference')}
+                          style={{
+                            fontSize: 15,
+                            cursor: 'pointer',
+                            animation: isRef ? `kanjiPulseActive 2s ease-in-out infinite` : `kanjiPulse 3s ease-in-out infinite`,
+                            color: isRef ? lc : '#888',
+                            transition: 'color 0.3s ease',
+                            userSelect: 'none' as const,
+                            position: 'relative' as const,
+                          }}
+                          title={isRef ? 'Back to skill.md' : 'View reference.md'}
+                        >
+                          {selectedSkill.nameJa}
+                        </span>
+                      )}
+                      <span style={{ color: '#555', fontSize: 10 }}>#{selectedSkill.id}</span>
+                      {/* Page indicator */}
+                      <span style={{
+                        color: lc, fontSize: 8, letterSpacing: 1, opacity: 0.5,
+                        border: `1px solid ${lc}33`, padding: '1px 5px', marginLeft: 4,
+                      }}>
+                        {pageLabel}
+                      </span>
+                    </div>
+                    <span
+                      style={{ color: '#666', fontSize: 14, cursor: 'pointer', padding: '0 4px' }}
+                      onClick={() => setSelectedSkill(null)}
+                    >✕</span>
+                  </div>
+
+                  {/* Meta row */}
+                  <div style={{
+                    display: 'flex', gap: 16, fontSize: 10, color: '#888', marginBottom: 10,
+                  }}>
+                    <span>
+                      <span style={{ color: lc }}>■</span>{' '}
+                      L{selectedSkill.layer} {layerNames[selectedSkill.layer]}
+                    </span>
+                    <span>CAT: <span style={{ color: '#CCC' }}>{selectedSkill.category}</span></span>
+                    <span>STATUS: <span style={{ color: '#39FF14' }}>{selectedSkill.status.toUpperCase()}</span></span>
+                    {selectedSkill.confidence !== undefined && (
+                      <span>CONF: <span style={{ color: '#00CCFF' }}>{selectedSkill.confidence}%</span></span>
+                    )}
+                  </div>
+
+                  {/* ═══ PAGE: skill.md ═══ */}
+                  {!isRef && (
+                    <>
+                      {/* Description */}
+                      {selectedSkill.description && (
+                        <div style={{
+                          color: '#CCCCCC', fontSize: 12, lineHeight: '18px', marginBottom: 10,
+                          borderLeft: `2px solid ${lc}33`, paddingLeft: 10,
+                        }}>
+                          {selectedSkill.description}
+                        </div>
+                      )}
+
+                      {selectedSkill.details && (
+                        <div style={{ marginBottom: 10 }}>
+                          <div style={{
+                            color: '#AAAAAA', fontSize: 11, lineHeight: '17px', marginBottom: 10,
+                            padding: '8px 10px', background: `${lc}08`, borderLeft: `2px solid ${lc}44`,
+                          }}>
+                            {selectedSkill.details.overview}
+                          </div>
+
+                          {selectedSkill.details.capabilities.length > 0 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{
+                                color: lc, fontSize: 9, letterSpacing: 2, marginBottom: 4,
+                                textTransform: 'uppercase' as const, opacity: 0.7,
+                              }}>
+                                CAPABILITIES
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 3 }}>
+                                {selectedSkill.details.capabilities.map((cap, i) => (
+                                  <div key={i} style={{
+                                    color: '#999', fontSize: 10, lineHeight: '15px',
+                                    paddingLeft: 10,
+                                  }}>
+                                    <span style={{ color: lc, marginRight: 6, fontSize: 8 }}>&#x25B8;</span>
+                                    {cap}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          <div style={{ marginBottom: 10 }}>
+                            <div style={{
+                              color: lc, fontSize: 9, letterSpacing: 2, marginBottom: 4,
+                              textTransform: 'uppercase' as const, opacity: 0.7,
+                            }}>
+                              USAGE
+                            </div>
+                            <div style={{
+                              color: '#888', fontSize: 10, lineHeight: '15px', paddingLeft: 10,
+                            }}>
+                              {selectedSkill.details.usage}
+                            </div>
+                          </div>
+
+                          {selectedSkill.details.notes && (
+                            <div style={{
+                              color: '#FF9900', fontSize: 10, lineHeight: '15px',
+                              padding: '6px 10px', background: 'rgba(255, 153, 0, 0.06)',
+                              borderLeft: '2px solid rgba(255, 153, 0, 0.3)',
+                            }}>
+                              <span style={{ fontSize: 9, letterSpacing: 1, marginRight: 6 }}>NOTE:</span>
+                              {selectedSkill.details.notes}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* ═══ PAGE: reference.md ═══ */}
+                  {isRef && (
+                    <>
+                      {selectedSkill.reference ? (
+                        <div style={{ marginBottom: 10 }}>
+                          {/* Synopsis */}
+                          <div style={{
+                            color: '#CCCCCC', fontSize: 12, lineHeight: '18px', marginBottom: 10,
+                            borderLeft: `2px solid ${lc}33`, paddingLeft: 10,
+                            fontStyle: 'italic' as const,
+                          }}>
+                            {selectedSkill.reference.synopsis}
+                          </div>
+
+                          {/* Parameters */}
+                          {selectedSkill.reference.parameters && selectedSkill.reference.parameters.length > 0 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{
+                                color: lc, fontSize: 9, letterSpacing: 2, marginBottom: 4,
+                                textTransform: 'uppercase' as const, opacity: 0.7,
+                              }}>
+                                PARAMETERS
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 3 }}>
+                                {selectedSkill.reference.parameters.map((param, i) => (
+                                  <div key={i} style={{
+                                    color: '#999', fontSize: 10, lineHeight: '15px',
+                                    paddingLeft: 10, fontFamily: "'Courier New', monospace",
+                                  }}>
+                                    <span style={{ color: '#00CCFF', marginRight: 6, fontSize: 9 }}>$</span>
+                                    {param}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Outputs */}
+                          {selectedSkill.reference.outputs && selectedSkill.reference.outputs.length > 0 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{
+                                color: lc, fontSize: 9, letterSpacing: 2, marginBottom: 4,
+                                textTransform: 'uppercase' as const, opacity: 0.7,
+                              }}>
+                                OUTPUTS
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 3 }}>
+                                {selectedSkill.reference.outputs.map((out, i) => (
+                                  <div key={i} style={{
+                                    color: '#999', fontSize: 10, lineHeight: '15px',
+                                    paddingLeft: 10,
+                                  }}>
+                                    <span style={{ color: '#39FF14', marginRight: 6, fontSize: 9 }}>&#x2192;</span>
+                                    {out}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Examples */}
+                          {selectedSkill.reference.examples && selectedSkill.reference.examples.length > 0 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{
+                                color: lc, fontSize: 9, letterSpacing: 2, marginBottom: 4,
+                                textTransform: 'uppercase' as const, opacity: 0.7,
+                              }}>
+                                EXAMPLES
+                              </div>
+                              <div style={{
+                                background: 'rgba(0,0,0,0.4)', border: '1px solid #333',
+                                padding: '6px 10px', display: 'flex', flexDirection: 'column' as const, gap: 4,
+                              }}>
+                                {selectedSkill.reference.examples.map((ex, i) => (
+                                  <div key={i} style={{
+                                    color: '#AAA', fontSize: 10, lineHeight: '15px',
+                                    fontFamily: "'Courier New', monospace",
+                                  }}>
+                                    <span style={{ color: '#666', marginRight: 6 }}>{i + 1}.</span>
+                                    {ex}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Integration */}
+                          {selectedSkill.details?.integration && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{
+                                color: lc, fontSize: 9, letterSpacing: 2, marginBottom: 4,
+                                textTransform: 'uppercase' as const, opacity: 0.7,
+                              }}>
+                                INTEGRATION
+                              </div>
+                              <div style={{
+                                color: '#888', fontSize: 10, lineHeight: '15px', paddingLeft: 10,
+                              }}>
+                                {selectedSkill.details.integration}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Related Skills */}
+                          {selectedSkill.reference.relatedSkills && selectedSkill.reference.relatedSkills.length > 0 && (
+                            <div style={{ marginBottom: 10 }}>
+                              <div style={{
+                                color: lc, fontSize: 9, letterSpacing: 2, marginBottom: 4,
+                                textTransform: 'uppercase' as const, opacity: 0.7,
+                              }}>
+                                SEE ALSO
+                              </div>
+                              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
+                                {selectedSkill.reference.relatedSkills.map((rid, i) => (
+                                  <span key={i} style={{
+                                    color: lc, fontSize: 9, padding: '2px 6px',
+                                    border: `1px solid ${lc}44`, background: `${lc}0A`,
+                                    letterSpacing: 0.5,
+                                  }}>
+                                    {rid}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div style={{
+                          color: '#555', fontSize: 11, fontStyle: 'italic' as const,
+                          padding: '20px 10px', textAlign: 'center' as const,
+                        }}>
+                          reference.md not available for this skill
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {/* File path — shown on both pages */}
+                  {selectedSkill.filePath && (
+                    <div style={{ color: lc, fontSize: 9, opacity: 0.6, letterSpacing: 0.5 }}>
+                      → {selectedSkill.filePath}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* ═══ ROW 9: SKILL GRAPH 3D (FULL WIDTH) ═══ */}
           <div style={SPACER_2} />
