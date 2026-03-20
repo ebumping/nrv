@@ -67,12 +67,12 @@ export interface HexagonalSkillMatrixProps {
 
 // Layer colors matching Eva unit colors
 const layerColors: Record<number, string> = {
-  0: '#666666',  // Infrastructure - dim gray
+  0: '#FFFFFF',  // Infrastructure - white
   1: NERVColors.phosphorCyan,  // Foundation - cyan
   2: NERVColors.phosphorGreen, // Core - green
   3: NERVColors.amber,         // Advanced - amber
   4: NERVColors.crimson,       // Expert - red
-  5: '#FF00FF',  // Strategy - magenta
+  5: NERVColors.evaPurple,     // Strategy - EVA-01 purple
 };
 
 const layerNames: Record<number, { en: string; ja: string }> = {
@@ -133,22 +133,42 @@ export function HexagonalSkillMatrix({
   const [breathPhase, setBreathPhase] = useState(0);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
+  // Measure container width for responsive columns
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+    ro.observe(el);
+    setContainerWidth(el.getBoundingClientRect().width);
+    return () => ro.disconnect();
+  }, []);
+
+  // Auto-calculate columns from container width (fall back to prop)
+  const effectiveColumns = containerWidth > 0
+    ? Math.max(4, Math.floor((containerWidth - cellSize) / (cellSize * 1.5)))
+    : columns;
+
   // Breathing animation
   useEffect(() => {
     if (!breathing) return;
-    
+
     const interval = setInterval(() => {
       setBreathPhase(p => (p + 1) % 360);
     }, 50);
-    
+
     return () => clearInterval(interval);
   }, [breathing]);
-  
+
   // Calculate SVG dimensions
-  const rows = Math.ceil(skills.length / columns);
-  const svgWidth = (columns + 0.5) * cellSize * 1.5 + cellSize;
+  const rows = Math.ceil(skills.length / effectiveColumns);
+  const svgWidth = (effectiveColumns + 0.5) * cellSize * 1.5 + cellSize;
   const svgHeight = rows * cellSize * Math.sqrt(3) + cellSize * 2;
   
   // Group skills by layer for stats
@@ -263,7 +283,7 @@ export function HexagonalSkillMatrix({
           const layerStartIndex = skills.findIndex(s => s.layer === layerNum);
           if (layerStartIndex === -1) return null;
           
-          const pos = getHexPosition(layerStartIndex, columns, cellSize);
+          const pos = getHexPosition(layerStartIndex, effectiveColumns, cellSize);
           
           return (
             <g key={`layer-${layer}`}>
@@ -284,7 +304,7 @@ export function HexagonalSkillMatrix({
         
         {/* Skill hexagons */}
         {skills.map((skill, index) => {
-          const pos = getHexPosition(index, columns, cellSize);
+          const pos = getHexPosition(index, effectiveColumns, cellSize);
           const isSelected = skill.id === selectedId;
           const isHovered = skill.id === hoveredId;
           const layerColor = layerColors[skill.layer] || NERVColors.textDim;
@@ -317,11 +337,11 @@ export function HexagonalSkillMatrix({
                 opacity={isSelected ? 1 : isHovered ? 1 : 0.7}
               />
               
-              {/* Inner hexagon - status color fill */}
+              {/* Inner hexagon - layer color fill */}
               {(skill.status === 'active' || skill.status === 'warning' || skill.status === 'danger') && (
                 <polygon
                   points={generateHexPath(0, 0, hexRadius * 0.7)}
-                  fill={statusColor}
+                  fill={layerColor}
                   opacity={skill.status === 'active' ? 0.15 : skill.status === 'warning' ? 0.2 : 0.3}
                 />
               )}

@@ -180,80 +180,78 @@ export function HoloGlobe({
       // === DRAW LONGITUDE LINES ===
       for (let i = 0; i < lonLines; i++) {
         const lon = (i / lonLines) * 360 - 180;
-        ctx.beginPath();
-        let started = false;
         const segments = 60;
+        for (let j = 0; j < segments; j++) {
+          const lat1 = (j / segments) * 180 - 90;
+          const lat2 = ((j + 1) / segments) * 180 - 90;
+          const p1 = latLonTo3D(lat1, lon, r);
+          const p2 = latLonTo3D(lat2, lon, r);
+          const proj1 = projectPoint(p1, w, h, rotY);
+          const proj2 = projectPoint(p2, w, h, rotY);
 
-        for (let j = 0; j <= segments; j++) {
-          const lat = (j / segments) * 180 - 90;
-          const p3d = latLonTo3D(lat, lon, r);
-          const proj = projectPoint(p3d, w, h, rotY);
+          const alpha = (proj1.visible && proj2.visible) ? 0.5 :
+                        (!proj1.visible && !proj2.visible) ? 0.1 : 0.2;
+          const lw = (proj1.visible && proj2.visible) ? 0.8 : 0.3;
 
-          const alpha = proj.visible ? 0.5 : 0.1;
+          ctx.beginPath();
+          ctx.moveTo(proj1.x, proj1.y);
+          ctx.lineTo(proj2.x, proj2.y);
           ctx.strokeStyle = wireColor;
           ctx.globalAlpha = alpha;
-          ctx.lineWidth = proj.visible ? 0.8 : 0.3;
-
-          if (!started) {
-            ctx.moveTo(proj.x, proj.y);
-            started = true;
-          } else {
-            ctx.lineTo(proj.x, proj.y);
-          }
+          ctx.lineWidth = lw;
+          ctx.stroke();
         }
-        ctx.stroke();
       }
 
       // === DRAW LATITUDE LINES ===
       for (let i = 1; i < latLines; i++) {
         const lat = (i / latLines) * 180 - 90;
-        ctx.beginPath();
-        let started = false;
         const segments = 72;
+        for (let j = 0; j < segments; j++) {
+          const lon1 = (j / segments) * 360 - 180;
+          const lon2 = ((j + 1) / segments) * 360 - 180;
+          const p1 = latLonTo3D(lat, lon1, r);
+          const p2 = latLonTo3D(lat, lon2, r);
+          const proj1 = projectPoint(p1, w, h, rotY);
+          const proj2 = projectPoint(p2, w, h, rotY);
 
-        // Split into visible and hidden segments
-        for (let j = 0; j <= segments; j++) {
-          const lon = (j / segments) * 360 - 180;
-          const p3d = latLonTo3D(lat, lon, r);
-          const proj = projectPoint(p3d, w, h, rotY);
+          const alpha = (proj1.visible && proj2.visible) ? 0.5 :
+                        (!proj1.visible && !proj2.visible) ? 0.08 : 0.2;
+          const lw = (proj1.visible && proj2.visible) ? 0.8 : 0.3;
 
-          const alpha = proj.visible ? 0.5 : 0.08;
+          ctx.beginPath();
+          ctx.moveTo(proj1.x, proj1.y);
+          ctx.lineTo(proj2.x, proj2.y);
           ctx.strokeStyle = wireColor;
           ctx.globalAlpha = alpha;
-          ctx.lineWidth = proj.visible ? 0.8 : 0.3;
-
-          if (!started) {
-            ctx.moveTo(proj.x, proj.y);
-            started = true;
-          } else {
-            ctx.lineTo(proj.x, proj.y);
-          }
+          ctx.lineWidth = lw;
+          ctx.stroke();
         }
-        ctx.stroke();
       }
 
       // === EQUATOR HIGHLIGHT ===
       if (showEquator) {
-        ctx.beginPath();
-        let started = false;
         const segments = 72;
-        for (let j = 0; j <= segments; j++) {
-          const lon = (j / segments) * 360 - 180;
-          const p3d = latLonTo3D(0, lon, r);
-          const proj = projectPoint(p3d, w, h, rotY);
+        for (let j = 0; j < segments; j++) {
+          const lon1 = (j / segments) * 360 - 180;
+          const lon2 = ((j + 1) / segments) * 360 - 180;
+          const p1 = latLonTo3D(0, lon1, r);
+          const p2 = latLonTo3D(0, lon2, r);
+          const proj1 = projectPoint(p1, w, h, rotY);
+          const proj2 = projectPoint(p2, w, h, rotY);
 
+          const alpha = (proj1.visible && proj2.visible) ? 0.8 :
+                        (!proj1.visible && !proj2.visible) ? 0.15 : 0.35;
+          const lw = (proj1.visible && proj2.visible) ? 1.5 : 0.5;
+
+          ctx.beginPath();
+          ctx.moveTo(proj1.x, proj1.y);
+          ctx.lineTo(proj2.x, proj2.y);
           ctx.strokeStyle = '#FFAA00';
-          ctx.globalAlpha = proj.visible ? 0.8 : 0.15;
-          ctx.lineWidth = proj.visible ? 1.5 : 0.5;
-
-          if (!started) {
-            ctx.moveTo(proj.x, proj.y);
-            started = true;
-          } else {
-            ctx.lineTo(proj.x, proj.y);
-          }
+          ctx.globalAlpha = alpha;
+          ctx.lineWidth = lw;
+          ctx.stroke();
         }
-        ctx.stroke();
       }
 
       // === DRAW MARKERS ===

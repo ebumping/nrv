@@ -387,59 +387,132 @@ export function TacticalMap({ width = 580, height = 180 }: TacticalMapProps) {
 // HEX TARGET - Rotating hexagonal targeting display
 // ═══════════════════════════════════════════════════════════════════════════════
 
+interface TargetProfile {
+  id: string;
+  name: string;
+  nameJa?: string;
+  distance: string;
+  bearing: string;
+  type: 'hostile' | 'friendly' | 'unknown';
+  pattern?: string;
+}
+
 interface HexTargetProps {
   width?: number;
   height?: number;
   targetName?: string;
   distance?: string;
   bearing?: string;
+  targets?: TargetProfile[];
+  onTargetSelect?: (target: TargetProfile) => void;
 }
 
-export function HexTarget({ width = 290, height = 200, targetName = 'ANGEL-04', distance = '2,847m', bearing = '047°' }: HexTargetProps) {
+export function HexTarget({
+  width = 290,
+  height = 200,
+  targetName = 'ANGEL-04',
+  distance = '2,847m',
+  bearing = '047°',
+  targets,
+  onTargetSelect,
+}: HexTargetProps) {
+  const [selectedIdx, setSelectedIdx] = useState(0);
+  const [flash, setFlash] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => setFlash(f => !f), 600);
+    return () => clearInterval(interval);
+  }, []);
+
+  const activeTargets = targets || [{ id: '0', name: targetName, distance, bearing, type: 'hostile' as const }];
+  const current = activeTargets[selectedIdx] || activeTargets[0];
+  const typeColor = current.type === 'hostile' ? NERVColors.crimson
+    : current.type === 'friendly' ? NERVColors.phosphorGreen : NERVColors.amber;
+
+  const svgH = height - 20;
   const cx = width / 2;
-  const cy = (height - 20) / 2;
-  const hexSize = Math.min(width, height - 20) * 0.4;
-  
-  const containerStyle: React.CSSProperties = {
-    width,
-    height,
-    backgroundColor: NERVColors.terminalBlack,
-    border: `1px solid ${NERVColors.textDim}`,
-    fontFamily: "'Courier New', monospace",
+  const cy = svgH * 0.42;
+  const hexSize = Math.min(width, svgH) * 0.32;
+
+  const handleTargetClick = (idx: number) => {
+    setSelectedIdx(idx);
+    if (onTargetSelect && activeTargets[idx]) onTargetSelect(activeTargets[idx]);
   };
-  
-  const headerStyle: React.CSSProperties = {
-    backgroundColor: 'rgba(100,0,0,0.3)',
-    borderBottom: `1px solid ${NERVColors.crimson}`,
-    padding: '4px 8px',
-    display: 'flex',
-    justifyContent: 'space-between',
-  };
-  
+
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
+    <div style={{
+      width: '100%',
+      backgroundColor: NERVColors.terminalBlack,
+      border: `1px solid ${NERVColors.textDim}`,
+      fontFamily: "'Courier New', monospace",
+    }}>
+      {/* Header with target tabs */}
+      <div style={{
+        backgroundColor: 'rgba(100,0,0,0.3)',
+        borderBottom: `1px solid ${NERVColors.crimson}`,
+        padding: '4px 8px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}>
         <span style={{ color: NERVColors.textBright, fontSize: 9, fontWeight: 'bold', letterSpacing: 1 }}>TARGET LOCK</span>
         <span style={{ color: NERVColors.textDim, fontSize: 8 }}>目標補足</span>
-        <span style={{ color: NERVColors.phosphorGreen, fontSize: 8 }}>LOCKED</span>
+        <span style={{ color: typeColor, fontSize: 8 }}>
+          {activeTargets.length > 1 ? `${selectedIdx + 1}/${activeTargets.length}` : 'LOCKED'}
+        </span>
       </div>
-      
-      <svg width={width} height={height - 20}>
+
+      {/* Multi-target selector */}
+      {activeTargets.length > 1 && (
+        <div style={{
+          display: 'flex',
+          borderBottom: `1px solid ${NERVColors.borderDim}`,
+        }}>
+          {activeTargets.map((t, i) => {
+            const tColor = t.type === 'hostile' ? NERVColors.crimson
+              : t.type === 'friendly' ? NERVColors.phosphorGreen : NERVColors.amber;
+            const isActive = i === selectedIdx;
+            return (
+              <div
+                key={t.id}
+                onClick={() => handleTargetClick(i)}
+                style={{
+                  flex: 1,
+                  padding: '3px 4px',
+                  fontSize: 7,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  color: isActive ? tColor : NERVColors.textDim,
+                  borderBottom: isActive ? `2px solid ${tColor}` : '2px solid transparent',
+                  backgroundColor: isActive ? `${tColor}11` : 'transparent',
+                  letterSpacing: 1,
+                }}
+              >
+                {t.name}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <svg width="100%" viewBox={`0 0 ${width} ${svgH}`} style={{ display: 'block' }}>
         {/* Outer hexagon */}
         <polygon
           points={hexPoints(cx, cy, hexSize)}
           fill="none"
-          stroke={NERVColors.textBright}
+          stroke={typeColor}
           strokeWidth={2}
+          opacity={0.8}
         />
-        
+
         {/* Rotating inner reticle */}
         <polygon
-          points={hexPoints(cx, cy, hexSize * 0.75)}
+          points={hexPoints(cx, cy, hexSize * 0.7)}
           fill="none"
-          stroke={NERVColors.phosphorGreen}
+          stroke={typeColor}
           strokeWidth={1}
           strokeDasharray="4,2"
+          opacity={0.6}
           style={{ transformOrigin: `${cx}px ${cy}px` }}
         >
           <animateTransform
@@ -450,26 +523,59 @@ export function HexTarget({ width = 290, height = 200, targetName = 'ANGEL-04', 
             repeatCount="indefinite"
           />
         </polygon>
-        
+
+        {/* Innermost hex fill */}
+        <polygon
+          points={hexPoints(cx, cy, hexSize * 0.4)}
+          fill={typeColor}
+          opacity={0.08}
+          stroke={typeColor}
+          strokeWidth={0.5}
+          opacity={0.3}
+        />
+
         {/* Crosshair */}
-        <line x1={cx - 15} y1={cy} x2={cx + 15} y2={cy} stroke={NERVColors.phosphorGreen} strokeWidth={1} />
-        <line x1={cx} y1={cy - 15} x2={cx} y2={cy + 15} stroke={NERVColors.phosphorGreen} strokeWidth={1} />
-        <circle cx={cx} cy={cy} r={3} fill={NERVColors.phosphorGreen} opacity={0.8} />
-        
+        <line x1={cx - hexSize * 0.5} y1={cy} x2={cx - 8} y2={cy} stroke={typeColor} strokeWidth={1} opacity={0.6} />
+        <line x1={cx + 8} y1={cy} x2={cx + hexSize * 0.5} y2={cy} stroke={typeColor} strokeWidth={1} opacity={0.6} />
+        <line x1={cx} y1={cy - hexSize * 0.5} x2={cx} y2={cy - 8} stroke={typeColor} strokeWidth={1} opacity={0.6} />
+        <line x1={cx} y1={cy + 8} x2={cx} y2={cy + hexSize * 0.5} stroke={typeColor} strokeWidth={1} opacity={0.6} />
+        <circle cx={cx} cy={cy} r={3} fill={typeColor} opacity={0.8} />
+
         {/* Corner brackets */}
-        <path d={`M ${cx - hexSize} ${cy - hexSize} L ${cx - hexSize} ${cy - hexSize + 15}`} fill="none" stroke={NERVColors.textBright} strokeWidth={1.5} />
-        <path d={`M ${cx - hexSize} ${cy - hexSize} L ${cx - hexSize + 15} ${cy - hexSize}`} fill="none" stroke={NERVColors.textBright} strokeWidth={1.5} />
-        <path d={`M ${cx + hexSize} ${cy - hexSize} L ${cx + hexSize} ${cy - hexSize + 15}`} fill="none" stroke={NERVColors.textBright} strokeWidth={1.5} />
-        <path d={`M ${cx + hexSize} ${cy - hexSize} L ${cx + hexSize - 15} ${cy - hexSize}`} fill="none" stroke={NERVColors.textBright} strokeWidth={1.5} />
-        
-        {/* Info */}
-        <text x={cx} y={height - 55} fill={NERVColors.textBright} fontSize={11} fontWeight="bold" textAnchor="middle" letterSpacing={2}>
-          {targetName}
+        {[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([dx, dy], i) => (
+          <g key={i}>
+            <line
+              x1={cx + dx * (hexSize + 4)} y1={cy + dy * (hexSize - 10)}
+              x2={cx + dx * (hexSize + 4)} y2={cy + dy * (hexSize + 4)}
+              stroke={NERVColors.textBright} strokeWidth={1.5} opacity={0.6}
+            />
+            <line
+              x1={cx + dx * (hexSize - 10)} y1={cy + dy * (hexSize + 4)}
+              x2={cx + dx * (hexSize + 4)} y2={cy + dy * (hexSize + 4)}
+              stroke={NERVColors.textBright} strokeWidth={1.5} opacity={0.6}
+            />
+          </g>
+        ))}
+
+        {/* Target info */}
+        <text x={cx} y={svgH - 42} fill={NERVColors.textBright} fontSize={12} fontWeight="bold" textAnchor="middle" letterSpacing={2}>
+          {current.name}
         </text>
-        <text x={cx} y={height - 43} fill={NERVColors.textDim} fontSize={8} textAnchor="middle">
-          DIST: {distance} | BRG: {bearing}
+        <text x={cx} y={svgH - 30} fill={NERVColors.textDim} fontSize={8} textAnchor="middle">
+          DIST: {current.distance} | BRG: {current.bearing}
+          {current.pattern && ` | ${current.pattern}`}
         </text>
-        <text x={cx} y={height - 32} fill={NERVColors.phosphorGreen} fontSize={9} fontWeight="bold" textAnchor="middle">
+        <text
+          x={cx}
+          y={svgH - 16}
+          fill={typeColor}
+          fontSize={9}
+          fontWeight="bold"
+          textAnchor="middle"
+          style={{ cursor: onTargetSelect ? 'pointer' : 'default' }}
+          onClick={() => onTargetSelect?.(current)}
+          opacity={flash ? 1 : 0.3}
+        >
           TRACKING // 追跡中
         </text>
       </svg>
@@ -547,7 +653,7 @@ interface StatusGridProps {
   width?: number;
   height?: number;
   title: string;
-  titleJa: string;
+  titleJa?: string;
   cells: Array<{
     label: string;
     labelJa?: string;
@@ -556,7 +662,7 @@ interface StatusGridProps {
   }>;
 }
 
-export function StatusGrid({ width = 280, height = 120, title, titleJa, cells }: StatusGridProps) {
+export function StatusGrid({ title, titleJa, cells }: StatusGridProps) {
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'warning': return '#FF6A00';
@@ -564,55 +670,62 @@ export function StatusGrid({ width = 280, height = 120, title, titleJa, cells }:
       default: return NERVColors.phosphorGreen;
     }
   };
-  
-  const cols = 2;
-  const rows = Math.ceil(cells.length / cols);
-  const cellWidth = (width - 4) / cols;
-  const cellHeight = (height - 24) / rows;
-  
-  const containerStyle: React.CSSProperties = {
-    width,
-    height,
-    backgroundColor: NERVColors.terminalBlack,
-    border: `1px solid ${NERVColors.textDim}`,
-    fontFamily: "'Courier New', monospace",
-  };
-  
-  const headerStyle: React.CSSProperties = {
-    backgroundColor: 'rgba(100,0,0,0.3)',
-    borderBottom: `1px solid ${NERVColors.crimson}`,
-    padding: '4px 8px',
-    display: 'flex',
-    gap: 8,
-  };
-  
+
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <span style={{ color: NERVColors.textBright, fontSize: 9, fontWeight: 'bold', letterSpacing: 1 }}>{title}</span>
-        <span style={{ color: NERVColors.textDim, fontSize: 8 }}>{titleJa}</span>
+    <div style={{
+      width: '100%',
+      backgroundColor: NERVColors.terminalBlack,
+      border: `1px solid ${NERVColors.textDim}`,
+      fontFamily: "'Courier New', monospace",
+    }}>
+      <div style={{
+        backgroundColor: 'rgba(100,0,0,0.3)',
+        borderBottom: `1px solid ${NERVColors.crimson}`,
+        padding: '4px 8px',
+        display: 'flex',
+        gap: 8,
+        alignItems: 'baseline',
+      }}>
+        <span style={{ color: NERVColors.textBright, fontSize: 10, fontWeight: 'bold', letterSpacing: 1 }}>{title}</span>
+        {titleJa && <span style={{ color: NERVColors.textDim, fontSize: 9 }}>{titleJa}</span>}
       </div>
-      
-      <svg width={width} height={height - 20}>
+
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: 0,
+      }}>
         {cells.map((cell, i) => {
-          const col = i % cols;
-          const row = Math.floor(i / cols);
-          const x = 2 + col * cellWidth;
-          const y = row * cellHeight;
           const borderColor = getStatusColor(cell.status);
-          
           return (
-            <g key={i} transform={`translate(${x}, ${y})`}>
-              <rect width={cellWidth - 2} height={cellHeight - 2} fill="transparent" stroke={NERVColors.borderDim} strokeWidth={0.5} />
-              <rect width={2} height={cellHeight - 2} fill={borderColor} />
-              <text x={6} y={cellHeight * 0.3} fill={NERVColors.textDim} fontSize={6}>
-                {cell.label} <tspan fill={NERVColors.phosphorGreen} fontSize={5}>{cell.labelJa || ''}</tspan>
-              </text>
-              <text x={6} y={cellHeight * 0.65} fill={borderColor} fontSize={12} fontWeight="bold">{cell.value}</text>
-            </g>
+            <div key={i} style={{
+              borderLeft: `3px solid ${borderColor}`,
+              borderBottom: `1px solid ${NERVColors.borderDim}`,
+              borderRight: i % 2 === 0 ? `1px solid ${NERVColors.borderDim}` : 'none',
+              padding: '6px 8px',
+            }}>
+              <div style={{
+                color: NERVColors.textDim,
+                fontSize: 8,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                marginBottom: 2,
+              }}>
+                {cell.label}
+              </div>
+              <div style={{
+                color: borderColor,
+                fontSize: 14,
+                fontWeight: 'bold',
+                textShadow: `0 0 6px ${borderColor}`,
+                letterSpacing: 1,
+              }}>
+                {cell.value}
+              </div>
+            </div>
           );
         })}
-      </svg>
+      </div>
     </div>
   );
 }
@@ -633,80 +746,64 @@ export function SyncRatioLarge({ width = 280, height = 100, value = 94.2 }: Sync
     if (v < 100) return '#FF6A00';
     return NERVColors.phosphorGreen;
   };
-  
+
   const color = getColor(value);
   const segments = 10;
   const active = Math.min(Math.floor(value / 10), segments);
-  
-  const containerStyle: React.CSSProperties = {
-    width,
-    height,
-    backgroundColor: NERVColors.terminalBlack,
-    border: `1px solid ${NERVColors.textDim}`,
-    fontFamily: "'Courier New', monospace",
-  };
-  
-  const headerStyle: React.CSSProperties = {
-    backgroundColor: 'rgba(100,0,0,0.3)',
-    borderBottom: `1px solid ${NERVColors.crimson}`,
-    padding: '4px 8px',
-    display: 'flex',
-    gap: 8,
-  };
-  
-  const segWidth = (width - 40) / segments;
-  
+
   return (
-    <div style={containerStyle}>
-      <div style={headerStyle}>
-        <span style={{ color: NERVColors.textBright, fontSize: 9, fontWeight: 'bold', letterSpacing: 1 }}>SYNC RATIO</span>
-        <span style={{ color: NERVColors.textDim, fontSize: 8 }}>同期率</span>
-      </div>
-      
-      <svg width={width} height={height - 20}>
-        {/* Large value */}
-        <text
-          x={width / 2}
-          y={height * 0.55}
-          fill={color}
-          fontSize={48}
-          fontWeight="bold"
-          textAnchor="middle"
-          style={{ filter: `drop-shadow(0 0 8px ${color})` }}
-        >
+    <div style={{
+      width: '100%',
+      fontFamily: "'Courier New', monospace",
+      backgroundColor: NERVColors.terminalBlack,
+      border: `1px solid ${NERVColors.textDim}`,
+    }}>
+      <div style={{ padding: '12px 16px 8px', textAlign: 'center' }}>
+        <div style={{
+          color,
+          fontSize: 48,
+          fontWeight: 'bold',
+          textShadow: `0 0 12px ${color}, 0 0 24px ${color}44`,
+          lineHeight: 1,
+          letterSpacing: 2,
+        }}>
           {value.toFixed(1)}%
-        </text>
-        
-        {/* Label */}
-        <text x={width / 2} y={height * 0.65} fill={NERVColors.textDim} fontSize={9} textAnchor="middle" letterSpacing={2}>
+        </div>
+        <div style={{
+          color: NERVColors.textDim,
+          fontSize: 9,
+          letterSpacing: 2,
+          marginTop: 4,
+        }}>
           SYNC RATIO // 同期率
-        </text>
-        
-        {/* Segmented bar */}
-        <g transform={`translate(20, ${height * 0.75})`}>
-          {Array.from({ length: segments }).map((_, i) => {
-            let segColor: string;
-            if (i < active - 2) {
-              segColor = NERVColors.phosphorGreen;
-            } else if (i < active) {
-              segColor = '#FF6A00';
-            } else {
-              segColor = NERVColors.borderDim;
-            }
-            
-            return (
-              <rect
-                key={i}
-                x={i * segWidth}
-                width={segWidth - 1}
-                height={6}
-                fill={segColor}
-                style={segColor === NERVColors.phosphorGreen ? { filter: `drop-shadow(0 0 4px ${segColor})` } : undefined}
-              />
-            );
-          })}
-        </g>
-      </svg>
+        </div>
+      </div>
+
+      {/* Segmented bar */}
+      <div style={{ display: 'flex', gap: 1, padding: '0 12px 8px' }}>
+        {Array.from({ length: segments }).map((_, i) => {
+          let segColor: string;
+          if (i < active - 2) {
+            segColor = NERVColors.phosphorGreen;
+          } else if (i < active) {
+            segColor = '#FF6A00';
+          } else {
+            segColor = NERVColors.borderDim;
+          }
+
+          return (
+            <div
+              key={i}
+              style={{
+                flex: 1,
+                height: 6,
+                backgroundColor: segColor,
+                boxShadow: segColor === NERVColors.phosphorGreen ? `0 0 6px ${segColor}` : undefined,
+              }}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }

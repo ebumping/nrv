@@ -38,6 +38,16 @@ export interface SkillGraph3DProps {
 interface Vec3 { x: number; y: number; z: number; }
 interface Projected { x: number; y: number; z: number; scale: number; }
 
+// Layer colors matching skill registry (HexagonalSkillMatrix)
+const layerColors: Record<number, string> = {
+  0: '#FFFFFF',  // Infrastructure - white
+  1: '#00CED1',  // Foundation - phosphorCyan
+  2: '#39FF14',  // Core - phosphorGreen
+  3: '#FF8C00',  // Advanced - amber
+  4: '#DC143C',  // Expert - crimson
+  5: '#7B1FA2',  // Strategy - evaPurple
+};
+
 // === DEFAULT DATA (spawning_pool themed) ===
 
 const DEFAULT_NODES: SkillNode3D[] = [
@@ -59,12 +69,12 @@ const DEFAULT_NODES: SkillNode3D[] = [
   { id: 'evade', label: 'EVADE', gridX: 0.58, gridZ: 0.82, layer: 0 },
   { id: 'infil', label: 'INFIL', gridX: 0.78, gridZ: 0.78, layer: 0 },
   // Elevated hubs — command layer
-  { id: 'core', label: 'CORE', layer: 1, color: '#FF6600' },
+  { id: 'core', label: 'CORE', layer: 1, color: '#9C27B0' },
   { id: 'exec', label: 'EXEC', layer: 1, color: '#FF6600' },
-  { id: 'sigint', label: 'SIGINT', layer: 1, color: '#FF6600' },
+  { id: 'sigint', label: 'SIGINT', layer: 1, color: '#9C27B0' },
   { id: 'humint', label: 'HUMINT', layer: 1, color: '#FF6600' },
-  { id: 'c2', label: 'C2', layer: 2, color: '#FF4400' },
-  { id: 'cogwar', label: 'COGWAR', layer: 2, color: '#FF4400' },
+  { id: 'c2', label: 'C2', layer: 2, color: '#7B1FA2' },
+  { id: 'cogwar', label: 'COGWAR', layer: 2, color: '#7B1FA2' },
 ];
 
 const DEFAULT_EDGES: SkillEdge3D[] = [
@@ -481,9 +491,10 @@ export function SkillGraph3D({
         const fromPos = nodePositions.get(edge.source);
         const toPos = nodePositions.get(edge.target);
         if (!fromPos || !toPos) continue;
+        const arcColor = (edge.strength || 0.5) > 0.7 ? '#9C27B0' : '#FF5500';
         drawArc3D(
           fromPos, toPos, w, h, camAngle,
-          '#FF5500', edge.strength || 0.5, ei, time
+          arcColor, edge.strength || 0.5, ei, time
         );
       }
 
@@ -497,7 +508,7 @@ export function SkillGraph3D({
       for (const { node, proj } of sortedNodes) {
         const depthAlpha = Math.max(0.3, Math.min(1, 450 / proj.z));
         const isBase = (node.layer || 0) === 0;
-        const nodeColor = node.color || '#FF8800';
+        const nodeColor = node.color || layerColors[node.layer || 0] || '#FFFFFF';
         const conn = connectivity.get(node.id) || 0;
         const connScale = 1 + Math.min(conn, 8) * 0.08;
         const r = isBase
@@ -527,7 +538,7 @@ export function SkillGraph3D({
         // Label
         if (node.label) {
           ctx.globalAlpha = depthAlpha * 0.8;
-          ctx.fillStyle = isBase ? '#FFFFFF' : '#FF8800';
+          ctx.fillStyle = isBase ? '#FFFFFF' : nodeColor;
           ctx.font = isBase ? "7px 'Share Tech Mono', monospace" : "9px 'Share Tech Mono', monospace";
           ctx.textAlign = 'center';
           ctx.fillText(node.label, proj.x, proj.y - r - 3);

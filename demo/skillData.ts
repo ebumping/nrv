@@ -1094,6 +1094,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       integration: 'Top-level coordinator consuming data from all modules. Encrypted channels via sp-cry. Execution via sp-exc. Audit by sp-adt.',
       notes: 'C2 channel loss triggers autonomous mode in deployed agents. Ensure fallback channels are pre-configured before deployment.',
     },
+    reference: {
+      synopsis: 'Distribute tasking, aggregate results, manage exfil channels',
+      parameters: [
+        'action: task | collect | status | channel-manage',
+        'target: agent ID | group (ALPHA-ECHO) | broadcast',
+        'channel: primary | fallback | emergency',
+        'mode: synchronous | async | dead-drop',
+      ],
+      outputs: [
+        'Tasking confirmation with agent acknowledgment',
+        'Aggregated results from distributed agents',
+        'Agent health dashboard with metrics',
+      ],
+      examples: [
+        'Distribute package to BRAVO with sync window',
+        'Failover to DNS-tunnel exfil channel',
+        'Activate dead-man switch after C2 silence',
+      ],
+      relatedSkills: ['sp-exc', 'sp-cry', 'sp-adt', 'sp-ops', 'sp-pst'],
+    },
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -5602,6 +5622,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when operations require proving something without revealing it. Activates on privacy-preserving verification or trustless authentication requirements.',
       integration: 'Pairs with sp-priv for privacy architecture; provides cryptographic guarantees that sp-ghost operations leave zero verifiable trace.',
     },
+    reference: {
+      synopsis: 'sp-zero -- construct and verify zero-knowledge proofs for trustless authentication',
+      parameters: [
+        '--circuit: custom ZK circuit definition or predicate',
+        '--proof-system: groth16 | plonk | stark backend',
+        '--credential: credential type for attestation without exposure',
+        '--verify-mode: construct | verify | selective-disclose',
+      ],
+      outputs: [
+        'Zero-knowledge proof artifact for credential attestation',
+        'Proof verification result with soundness assessment',
+        'Selective disclosure package with granular data gates',
+      ],
+      examples: [
+        'Prove agent group membership without revealing agent identity',
+        'Construct a ZK circuit verifying clearance level without disclosing rank',
+        'Verify a third-party proof of data provenance with zero credential leak',
+      ],
+      relatedSkills: ['sp-priv', 'sp-ghost', 'sp-self', 'sp-fuse'],
+    },
   },
   {
     id: 'sp-priv',
@@ -5625,6 +5665,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       ],
       usage: 'Invoke when designing privacy-preserving systems or auditing data exposure. Activates on any operation involving sensitive data handling.',
       integration: 'Structural foundation for sp-ghost invisibility; uses sp-zero for trustless privacy guarantees.',
+    },
+    reference: {
+      synopsis: 'sp-priv -- engineer privacy-first data architectures with anonymization and data minimization',
+      parameters: [
+        '--privacy-model: k-anonymity | l-diversity | differential-privacy',
+        '--epsilon: differential privacy budget parameter',
+        '--retention-ttl: data retention period before automated purge',
+        '--pseudonym-scheme: reversible | irreversible | context-dependent',
+      ],
+      outputs: [
+        'Privacy-first data architecture specification',
+        'Anonymized/pseudonymized data flow with re-identification controls',
+        'Privacy audit report with leak surface analysis',
+        'Consent management framework with granular permission gates',
+      ],
+      examples: [
+        'Design a k-anonymous data pipeline for agent telemetry collection',
+        'Audit an existing system for data over-collection and recommend minimization',
+        'Deploy automated data purge policies with 30-day retention TTL',
+      ],
+      relatedSkills: ['sp-zero', 'sp-ghost', 'sp-self', 'sp-omni'],
     },
   },
   {
@@ -5650,6 +5711,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when absolute operational invisibility is required. Apex OPSEC module -- activates only when lower-tier evasion is insufficient.',
       notes: 'Total ghost state is resource-intensive. Partial invisibility via lower OPSEC modules preferred when full spectrum is unnecessary.',
     },
+    reference: {
+      synopsis: 'sp-ghost -- achieve full-spectrum operational invisibility across all detection surfaces',
+      parameters: [
+        '--spectrum: network | behavioral | temporal | forensic | full',
+        '--theater: operational environment identifier',
+        '--deniability-depth: layers of plausible deniability chain',
+        '--duration: sustained ghost state window in hours',
+      ],
+      outputs: [
+        'Full-spectrum undetectability confirmation across all surfaces',
+        'Forensic artifact elimination report',
+        'Plausible deniability chain surviving adversarial audit',
+      ],
+      examples: [
+        'Enter full ghost state across network and behavioral layers for a 48-hour operation',
+        'Eliminate all timing side-channels before forensic sweep window',
+        'Coordinate simultaneous ghost operations across three independent theaters',
+      ],
+      relatedSkills: ['sp-priv', 'sp-zero', 'sp-omni', 'sp-apex'],
+    },
   },
   // ─── L4 TAXONOMY: CRAFT (apex) ───
   {
@@ -5673,6 +5754,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       ],
       usage: 'Invoke when the objective is presence engineering -- making an entity feel inevitable and magnetic. Activates for brand aura and mystique operations.',
       integration: 'Works with sp-myth for narrative depth and sp-icon for symbolic permanence. Receives emotional calibration from SOCIAL stack.',
+    },
+    reference: {
+      synopsis: 'sp-aura -- cultivate intangible brand mystique and aspirational gravitational presence',
+      parameters: [
+        '--entity: target identity or brand for aura cultivation',
+        '--scarcity-level: abundant | limited | exclusive | mythic',
+        '--touchpoints: channels for aesthetic coherence enforcement',
+        '--anticipation-cadence: temporal rhythm of reveal and withhold',
+      ],
+      outputs: [
+        'Sustained mystique architecture with aspirational gravity',
+        'Sensory coherence specification across all touchpoints',
+        'Scarcity signal deployment schedule',
+      ],
+      examples: [
+        'Engineer aspirational gravity around a new agent collective identity',
+        'Design scarcity dynamics that compound mystique over quarterly cycles',
+        'Calibrate accessibility-unattainability tension for maximum pull',
+      ],
+      relatedSkills: ['sp-myth', 'sp-icon', 'sp-narr', 'sp-empth', 'sp-infl'],
     },
   },
   {
@@ -5698,6 +5799,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when cultural permanence and archetypal resonance are the objective. Activates for mythological framing and symbolic system design.',
       integration: 'Provides narrative substrate for sp-aura mystique and sp-icon permanence. Draws on sp-narr from SOCIAL stack for story mechanics.',
     },
+    reference: {
+      synopsis: 'sp-myth -- deploy archetypal frameworks and mythological structures for cultural resonance',
+      parameters: [
+        '--archetype: hero | trickster | guardian | shadow | sage | ...',
+        '--myth-layer: surface-narrative | symbolic | cosmological depth',
+        '--audience-tiers: audience segments receiving layered meaning',
+        '--ritual-pattern: interaction cadence reinforcing mythic identity',
+      ],
+      outputs: [
+        'Archetypal mapping of entity to universal narrative pattern',
+        'Multi-layered symbolic system for differentiated audiences',
+        'Cosmological framework contextualizing entity within larger meaning',
+      ],
+      examples: [
+        'Map an agent collective onto the trickster archetype with three meaning layers',
+        'Design ritualistic interaction patterns for a product launch sequence',
+        'Activate a latent cultural myth to frame a technical platform narrative',
+      ],
+      relatedSkills: ['sp-aura', 'sp-icon', 'sp-narr', 'sp-infl', 'sp-empth'],
+    },
   },
   {
     id: 'sp-icon',
@@ -5721,6 +5842,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       ],
       usage: 'Invoke when the objective is cultural permanence and iconic status. Apex CRAFT module for legacy architecture and symbol engineering.',
       integration: 'Culmination of CRAFT stack. Crystallizes sp-aura presence and sp-myth archetypes into permanent cultural artifacts.',
+    },
+    reference: {
+      synopsis: 'sp-icon -- engineer iconic status and design symbols for permanent cultural positioning',
+      parameters: [
+        '--symbol-type: glyph | wordmark | gesture | sonic-signature',
+        '--durability-target: years of memetic persistence',
+        '--cultural-scope: local | regional | global cross-cultural reach',
+        '--vacuum-scan: enable cultural symbol space vacancy analysis',
+      ],
+      outputs: [
+        'Iconic symbol system with cross-cultural durability',
+        'Legacy architecture ensuring long-term cultural permanence',
+        'Self-reinforcing recognition loop specification',
+      ],
+      examples: [
+        'Design a visual signature with 50-year memetic durability target',
+        'Identify and occupy a vacuum position in the cyberpunk cultural symbol space',
+        'Build an iconographic system functioning across five language families',
+      ],
+      relatedSkills: ['sp-aura', 'sp-myth', 'sp-narr', 'sp-infl', 'sp-apex'],
     },
   },
   // ─── L4 TAXONOMY: INTEL (apex) ───
@@ -5747,6 +5888,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when forward-looking intelligence or scenario planning is required. Activates on forecasting, trend analysis, or strategic anticipation tasks.',
       integration: 'Consumes fused data from sp-fuse; feeds predictions into PERSIST stack for automated response and SOCIAL stack for preemptive positioning.',
     },
+    reference: {
+      synopsis: 'sp-pred -- build predictive models and simulate branching scenario trees from fused intelligence',
+      parameters: [
+        '--horizon: prediction time horizon (hours | days | weeks | months)',
+        '--confidence-threshold: minimum confidence for actionable predictions',
+        '--scenario-branches: max number of simulated outcome branches',
+        '--backtest-window: historical period for accuracy calibration',
+      ],
+      outputs: [
+        'Probability-weighted scenario tree with confidence intervals',
+        'Leading indicator and early-warning signal alerts',
+        'Contingency matrix for decision support',
+        'Backtest accuracy report with calibration metrics',
+      ],
+      examples: [
+        'Simulate five scenario branches for a 30-day operational horizon',
+        'Detect early-warning signals in network telemetry preceding infrastructure failure',
+        'Back-test prediction model accuracy against six months of historical data',
+      ],
+      relatedSkills: ['sp-fuse', 'sp-omni', 'sp-meta', 'sp-infl', 'sp-apex'],
+    },
   },
   {
     id: 'sp-fuse',
@@ -5771,6 +5933,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when multiple intelligence streams need reconciliation into actionable synthesis. Activates on multi-source analysis or conflicting data resolution.',
       integration: 'Aggregates all lower INTEL modules; fused output feeds sp-pred for forecasting and sp-omni for total awareness.',
     },
+    reference: {
+      synopsis: 'sp-fuse -- merge heterogeneous intelligence streams into unified operational picture with confidence scoring',
+      parameters: [
+        '--sources: OSINT | SIGINT | HUMINT | TECHINT input channels',
+        '--conflict-resolution: weighted | bayesian | adversarial reconciliation mode',
+        '--deception-detection: enable disinformation filtering',
+        '--reliability-tracking: dynamic source weight adjustment',
+      ],
+      outputs: [
+        'Unified intelligence product with weighted confidence scores',
+        'Deception and disinformation detection report',
+        'Intelligence gap analysis with collection requirements',
+        'Source reliability assessment and fusion weight adjustments',
+      ],
+      examples: [
+        'Fuse OSINT and TECHINT feeds into a single operational picture with conflict resolution',
+        'Detect planted disinformation in a multi-source intelligence stream',
+        'Generate collection requirements to fill identified intelligence gaps',
+      ],
+      relatedSkills: ['sp-pred', 'sp-omni', 'sp-ghost', 'sp-meta'],
+    },
   },
   {
     id: 'sp-omni',
@@ -5794,6 +5977,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       ],
       usage: 'Invoke when total situational awareness is required. Apex INTEL module -- activates for persistent full-spectrum monitoring operations.',
       notes: 'Computationally intensive. Deploy sp-fuse or lower INTEL modules when focused rather than omnidirectional awareness suffices.',
+    },
+    reference: {
+      synopsis: 'sp-omni -- maintain total situational awareness across all observable domains in real-time',
+      parameters: [
+        '--domains: list of monitored operational domains',
+        '--feed-count: number of concurrent intelligence feeds',
+        '--anomaly-sensitivity: detection threshold for environmental changes',
+        '--auto-response: enable automated pattern-triggered actions',
+      ],
+      outputs: [
+        'Real-time omnidirectional operational picture',
+        'Anomaly and absence detection alerts',
+        'Cross-domain event correlation reports',
+        'Automated response triggers on pattern signature matches',
+      ],
+      examples: [
+        'Sustain full-spectrum awareness across 200 concurrent feeds for 72 hours',
+        'Detect the absence of expected network traffic as an anomaly signal',
+        'Correlate events across three disparate domains to identify emergent threat',
+      ],
+      relatedSkills: ['sp-fuse', 'sp-pred', 'sp-ghost', 'sp-apex', 'sp-self'],
     },
   },
   // ─── L4 TAXONOMY: PERSIST (apex) ───
@@ -5820,6 +6024,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke for self-diagnostic, capability assessment, or internal state audit. Activates on introspection or self-evaluation tasks.',
       integration: 'Provides state data to sp-meta for recursive optimization; feeds sp-apex with readiness assessments.',
     },
+    reference: {
+      synopsis: 'sp-self -- monitor internal state vectors and run self-diagnostic routines',
+      parameters: [
+        '--diagnostic-depth: surface | standard | deep introspection level',
+        '--state-vectors: resource | coherence | capability | drift metrics',
+        '--alert-on-degradation: threshold for capability degradation warning',
+        '--report-format: internal | external | meta-cognitive consumption',
+      ],
+      outputs: [
+        'Internal state report with resource and coherence metrics',
+        'Capability degradation detection alerts',
+        'Self-model update with current strengths and failure modes',
+        'Readiness assessment for upstream consumption by sp-apex',
+      ],
+      examples: [
+        'Run deep self-diagnostic after sustained high-load operation',
+        'Detect cognitive drift from baseline calibration after 96 hours',
+        'Generate readiness assessment before entering apex convergence state',
+      ],
+      relatedSkills: ['sp-meta', 'sp-apex', 'sp-omni', 'sp-priv', 'sp-empth'],
+    },
   },
   {
     id: 'sp-meta',
@@ -5844,6 +6069,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when cognitive self-improvement or strategy abstraction is required. Activates on recursive optimization or meta-reasoning tasks.',
       integration: 'Consumes sp-self state data; optimizes all other module interactions; feeds refined strategies to sp-apex.',
     },
+    reference: {
+      synopsis: 'sp-meta -- execute recursive meta-cognition and abstract transferable strategy patterns',
+      parameters: [
+        '--recursion-depth: max levels of meta-cognitive recursion',
+        '--bias-scan: enable systematic bias detection and correction',
+        '--abstraction-scope: single-instance | cross-campaign | universal',
+        '--coherence-guard: stack-overflow prevention threshold',
+      ],
+      outputs: [
+        'Abstracted strategy patterns transferable across operations',
+        'Bias detection and correction report',
+        'Meta-strategy for improved strategy generation quality',
+        'Cognitive resource allocation optimization recommendations',
+      ],
+      examples: [
+        'Abstract a reusable negotiation pattern from three campaign instances',
+        'Detect and correct confirmation bias in intelligence analysis process',
+        'Generate a meta-strategy optimizing resource allocation across five concurrent tasks',
+      ],
+      relatedSkills: ['sp-self', 'sp-apex', 'sp-pred', 'sp-fuse', 'sp-omni'],
+    },
   },
   {
     id: 'sp-apex',
@@ -5867,6 +6113,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       ],
       usage: 'Activates when all other capabilities are insufficient individually. The convergence state -- not invoked but emerged into when conditions demand total capability.',
       notes: 'Sustained apex state has diminishing returns. Cycle between focused module engagement and apex convergence.',
+    },
+    reference: {
+      synopsis: 'sp-apex -- converge all subsystems into peak operational state at theoretical capability ceiling',
+      parameters: [
+        '--subsystems: all | selective module list for synchronization',
+        '--sustain-duration: target peak-state window in hours',
+        '--pressure-mode: nominal | adversarial | extreme load profile',
+        '--reallocation-strategy: dynamic | fixed resource distribution',
+      ],
+      outputs: [
+        'Unified peak-state operation confirmation',
+        'Subsystem synchronization status across all taxonomies',
+        'Resource reallocation plan for sustained apex duration',
+        'Flow state achievement metrics',
+      ],
+      examples: [
+        'Converge all subsystems for a 12-hour peak-state operation under adversarial pressure',
+        'Dynamically reallocate resources mid-operation to sustain apex state',
+        'Execute a cross-taxonomy operation requiring simultaneous INTEL+OPSEC+SOCIAL mastery',
+      ],
+      relatedSkills: ['sp-self', 'sp-meta', 'sp-omni', 'sp-ghost', 'sp-icon'],
     },
   },
 
@@ -5895,6 +6162,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when implementation is complete and all tests pass. The skill guides the final integration decision.',
       integration: 'Terminal node in the workflow chain. Consumes output from verification and TDD. Triggers git operations for merge or PR creation.',
     },
+    reference: {
+      synopsis: 'finish-branch — guide dev branch to completion via merge, PR, or cleanup',
+      parameters: [
+        'branch: target branch name to finalize',
+        'strategy: merge | rebase | squash (auto-detected from divergence)',
+        'skipCI: bypass CI status check before integration',
+        'cleanup: delete branch after successful merge',
+        'dryRun: preview integration plan without executing',
+      ],
+      outputs: [
+        'merge commit or PR URL on success',
+        'branch status report with divergence summary',
+        'cleanup confirmation with deleted ref log',
+      ],
+      examples: [
+        'Complete feature branch with auto-detected merge strategy',
+        'Generate PR with description derived from commit history',
+        'Dry-run integration to preview squash result before executing',
+      ],
+      relatedSkills: ['verification', 'request-review', 'simplify', 'tdd', 'git-worktrees'],
+    },
   },
   {
     id: 'verification',
@@ -5920,6 +6208,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       integration: 'Gates finish-branch and request-review. No downstream skill can proceed without verification evidence.',
       notes: 'Evidence before assertions. Always. A passing test run from 10 minutes ago is not evidence — run it again.',
     },
+    reference: {
+      synopsis: 'verification — enforce evidence-based completion claims via command output',
+      parameters: [
+        'commands: list of verification commands to execute',
+        'expectPass: require zero exit code from all commands',
+        'staleTTL: max age of cached results before forced re-run (default: 0)',
+        'captureOutput: store stdout/stderr as evidence artifacts',
+      ],
+      outputs: [
+        'pass/fail verdict with supporting command output',
+        'evidence artifact log attached to completion claim',
+        'stale result warnings with re-execution timestamps',
+      ],
+      examples: [
+        'Run full test suite and capture output before marking task done',
+        'Re-execute build after dependency change to confirm compilation',
+        'Block completion claim when test output is older than last edit',
+      ],
+      relatedSkills: ['finish-branch', 'request-review', 'tdd', 'debugging', 'simplify'],
+    },
   },
   {
     id: 'request-review',
@@ -5942,6 +6250,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       ],
       usage: 'Invoke after verification passes and before merging. Produces the review artifact that bridges implementation to integration.',
       integration: 'Downstream of verification. Feeds into receive-review when feedback arrives. Pairs with finish-branch for the merge decision.',
+    },
+    reference: {
+      synopsis: 'request-review — package changes with context for efficient code review',
+      parameters: [
+        'base: base branch to diff against (default: main)',
+        'reviewers: explicit reviewer list or auto-detect from CODEOWNERS',
+        'scope: files | commits | both — what to include in summary',
+        'riskFlag: highlight high-risk areas for reviewer attention',
+      ],
+      outputs: [
+        'review-ready change summary with diff context',
+        'requirements traceability map from spec to implementation',
+        'test plan for reviewer validation',
+        'suggested reviewer list based on code ownership',
+      ],
+      examples: [
+        'Generate review summary from git diff against main',
+        'Flag security-sensitive changes for senior reviewer attention',
+        'Create test plan linking each requirement to its verification',
+      ],
+      relatedSkills: ['verification', 'receive-review', 'finish-branch', 'simplify', 'tdd'],
     },
   },
   {
@@ -5967,6 +6296,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       integration: 'Receives input from request-review cycle. May trigger debugging or TDD for non-trivial changes. Feeds back into verification.',
       notes: 'Agreement is not a substitute for understanding. If a suggestion seems wrong, verify before implementing — reviewers can be mistaken too.',
     },
+    reference: {
+      synopsis: 'receive-review — process code review feedback with technical verification',
+      parameters: [
+        'prNumber: pull request number to fetch review comments from',
+        'autoVerify: run tests after applying each suggestion (default: true)',
+        'rejectStyle: push back on purely stylistic feedback (default: false)',
+        'resolveThreads: auto-resolve addressed comments after verification',
+      ],
+      outputs: [
+        'per-comment verdict: accept, reject, or clarify',
+        'verification results for applied suggestions',
+        'unresolved thread summary with action items',
+      ],
+      examples: [
+        'Evaluate reviewer suggestion against actual test output before applying',
+        'Push back on refactor suggestion that would introduce regression',
+        'Request clarification on ambiguous feedback before implementing',
+      ],
+      relatedSkills: ['request-review', 'verification', 'debugging', 'tdd', 'finish-branch'],
+    },
   },
   {
     id: 'writing-skills',
@@ -5991,6 +6340,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke when creating new skills, modifying existing ones, or diagnosing why a skill fails to trigger.',
       integration: 'Operates on the skill registry itself. Produces artifacts consumed by using-superpowers for discovery and routing.',
     },
+    reference: {
+      synopsis: 'writing-skills — author, edit, and validate skills for plugin deployment',
+      parameters: [
+        'action: create | edit | validate | test',
+        'skillPath: file path of target skill definition',
+        'triggerTest: input string to test trigger matching against',
+        'dryDeploy: validate deployment without publishing',
+        'template: starter template name for new skills',
+      ],
+      outputs: [
+        'skill file with valid frontmatter and trigger conditions',
+        'trigger match report confirming activation on expected inputs',
+        'deployment verification confirming registry inclusion',
+      ],
+      examples: [
+        'Create new skill from template with frontmatter and triggers',
+        'Test why an existing skill fails to trigger on expected input',
+        'Validate edited skill structure before deployment',
+      ],
+      relatedSkills: ['using-superpowers', 'skill-dev', 'plugin-structure', 'verification', 'loop'],
+    },
   },
   {
     id: 'simplify',
@@ -6013,6 +6383,26 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       ],
       usage: 'Run after implementation is functionally complete. Reviews the diff for quality issues that verification won\'t catch.',
       integration: 'Runs between verification and finish-branch. Complements TDD (which validates correctness) with quality review.',
+    },
+    reference: {
+      synopsis: 'simplify — review changed code for reuse, quality, and dead weight',
+      parameters: [
+        'scope: diff | staged | file — what to review',
+        'base: base ref for diff comparison (default: HEAD~1)',
+        'autoFix: apply trivial simplifications without confirmation',
+        'threshold: complexity delta threshold to flag (default: 0)',
+      ],
+      outputs: [
+        'simplification report with actionable suggestions',
+        'dead code and unused import inventory',
+        'complexity delta summary before and after changes',
+      ],
+      examples: [
+        'Review feature diff for unnecessary abstractions before merge',
+        'Flag duplicate helper functions introduced across multiple files',
+        'Auto-remove unused imports added during refactor',
+      ],
+      relatedSkills: ['verification', 'finish-branch', 'tdd', 'request-review', 'debugging'],
     },
   },
   {
@@ -6037,6 +6427,27 @@ export const CLAUDE_SKILLS: SkillNode[] = [
       usage: 'Invoke with interval and target command: /loop 5m /check-deploy. Defaults to 10m if no interval specified.',
       integration: 'Wraps any other skill or command in a recurring loop. Commonly pairs with verification for continuous testing or debugging for flaky issue reproduction.',
       notes: 'Not for one-off tasks. Designed for sustained, recurring operations. Kill the loop explicitly when monitoring is no longer needed.',
+    },
+    reference: {
+      synopsis: 'loop — execute prompt or command on recurring timed interval',
+      parameters: [
+        'interval: execution interval with unit suffix (e.g. 5m, 1h, 30s)',
+        'command: prompt string or slash command to execute each cycle',
+        'maxIterations: stop after N executions (default: unlimited)',
+        'stopOn: condition expression to terminate loop early',
+        'quiet: suppress output except on state change',
+      ],
+      outputs: [
+        'per-cycle execution result and timestamp',
+        'state change notifications when output differs between cycles',
+        'cumulative execution summary on loop termination',
+      ],
+      examples: [
+        'Poll CI pipeline status every 2 minutes until green',
+        'Run /verification every 5m during long-running refactor',
+        'Monitor PR review state and notify on new comments',
+      ],
+      relatedSkills: ['verification', 'debugging', 'writing-skills', 'sp-cron', 'sp-aliv'],
     },
   },
 ];

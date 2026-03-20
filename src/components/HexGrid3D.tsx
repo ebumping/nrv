@@ -42,7 +42,17 @@ const STATUS_COLORS: Record<string, string> = {
   active: '#00FF66',
   warning: '#FFAA00',
   critical: '#DC143C',
-  inactive: '#333333',
+  inactive: '#FFFFFF',
+};
+
+// Layer colors matching skill registry (HexagonalSkillMatrix)
+const LAYER_COLORS: Record<number, string> = {
+  0: '#FFFFFF',  // Infrastructure - white
+  1: '#00CED1',  // Foundation - phosphorCyan
+  2: '#39FF14',  // Core - phosphorGreen
+  3: '#FF8C00',  // Advanced - amber
+  4: '#DC143C',  // Expert - crimson
+  5: '#7B1FA2',  // Strategy - evaPurple
 };
 
 function generateDefaultCells(): HexCell3D[] {
@@ -381,7 +391,10 @@ export function HexGrid3D({
       for (const { cell, pos, proj } of projected) {
         const corr = cell.correlation || 0;
         const isCyanEntry = corr > 0.5;
-        const baseColor = isCyanEntry ? '#00DDFF' : STATUS_COLORS[cell.status || 'active'];
+        const statusOverride = cell.status === 'warning' || cell.status === 'critical'
+          ? STATUS_COLORS[cell.status]
+          : null;
+        const baseColor = isCyanEntry ? '#00DDFF' : statusOverride || LAYER_COLORS[cell.layer] || '#FFFFFF';
         const pulse = cell.status === 'warning' || cell.status === 'critical'
           ? 1 + Math.sin(time * 2 + cell.q * 0.5 + cell.r * 0.7) * 0.15
           : isCyanEntry

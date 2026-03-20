@@ -14,6 +14,11 @@ export const NERVColors = {
   phosphorGreen: '#39FF14',
   phosphorCyan: '#00CED1',
   
+  // EVA-01 purple
+  evaPurple: '#7B1FA2',
+  evaPurpleBright: '#9C27B0',
+  evaPurpleDim: '#4A148C',
+
   // Alert levels
   crimson: '#DC143C',
   crimsonDark: '#8B0000',
@@ -294,13 +299,17 @@ export function SyncRatio({ value, showWarning = true }: SyncRatioProps) {
             strokeWidth={strokeWidth}
           />
           
-          {/* Threshold markers at 70%, 100%, 200% */}
-          <circle cx={size/2} cy={size/2} r={3} fill={NERVColors.amber} 
-            style={{ transform: `rotate(${0.175 * 360 - 90}deg)`, transformOrigin: 'center' }} />
-          <circle cx={size/2} cy={size/2} r={3} fill={NERVColors.phosphorGreen}
-            style={{ transform: `rotate(${0.25 * 360 - 90}deg)`, transformOrigin: 'center' }} />
-          <circle cx={size/2} cy={size/2} r={3} fill={NERVColors.crimson}
-            style={{ transform: `rotate(${0.5 * 360 - 90}deg)`, transformOrigin: 'center' }} />
+          {/* Threshold markers at 70%, 100%, 200% on the arc */}
+          {[
+            { frac: 0.175, color: NERVColors.amber },
+            { frac: 0.25, color: NERVColors.phosphorGreen },
+            { frac: 0.5, color: NERVColors.crimson },
+          ].map((m, i) => {
+            const angle = m.frac * 360 * (Math.PI / 180);
+            const mx = size / 2 + radius * Math.cos(angle);
+            const my = size / 2 + radius * Math.sin(angle);
+            return <circle key={i} cx={mx} cy={my} r={2.5} fill={m.color} opacity={0.8} />;
+          })}
           
           {/* Progress arc */}
           <circle

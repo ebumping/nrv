@@ -1,3 +1,4 @@
+import React from 'react';
 import { NERVColors } from './NERVPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -254,7 +255,8 @@ export function WireframeTerrain({
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// RADAR SWEEP DISPLAY - Rotating radar with sweep animation
+// RADAR SWEEP DISPLAY - Canvas-based rotating radar with sweep animation
+// Evangelion NERV tactical display style
 // ═══════════════════════════════════════════════════════════════════════════════
 
 interface RadarSweepProps {
@@ -266,90 +268,233 @@ interface RadarSweepProps {
   }>;
 }
 
+const radarContactColors: Record<string, string> = {
+  friendly: NERVColors.phosphorGreen,
+  hostile: NERVColors.crimson,
+  unknown: NERVColors.amber,
+};
+
 export function RadarSweep({ size = 200, contacts = [] }: RadarSweepProps) {
-  const centerX = size / 2;
-  const centerY = size / 2;
-  const radius = size / 2 - 10;
-  
-  const contactColors = {
-    friendly: NERVColors.phosphorGreen,
-    hostile: NERVColors.crimson,
-    unknown: NERVColors.amber,
-  };
-  
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const animRef = React.useRef<number>(0);
+  const sweepAngleRef = React.useRef<number>(0);
+  // Track when each contact was last hit by the sweep (stores timestamp)
+  const contactGlowRef = React.useRef<number[]>([]);
+
+  // Parse a hex color string into [r, g, b]
+  const hexToRgb = React.useCallback((hex: string): [number, number, number] => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)]
+      : [0, 255, 0];
+  }, []);
+
+  const draw = React.useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const cx = size / 2;
+    const cy = size / 2;
+    const radius = size / 2 - 10;
+    const now = performance.now();
+
+    // Advance sweep: one full rotation every 4 seconds
+    sweepAngleRef.current = ((now % 4000) / 4000) * Math.PI * 2;
+    const sweep = sweepAngleRef.current;
+
+    // Clear
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(dpr, dpr);
+
+    // --- Background circle ---
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fillStyle = NERVColors.terminalBlack;
+    ctx.fill();
+    ctx.closePath();
+
+    // Clip to radar circle for sweep rendering
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.clip();
+
+    // --- Sweep cone (trailing 30-degree gradient arc) ---
+    const trailAngle = (30 * Math.PI) / 180; // 30 degrees in radians
+    const sweepSteps = 20;
+    for (let i = 0; i < sweepSteps; i++) {
+      const t = i / sweepSteps;
+      const startA = sweep - trailAngle * (1 - t);
+      const endA = sweep - trailAngle * (1 - (t + 1) / sweepSteps);
+      const alpha = t * 0.35; // fade from 0 at tail to 0.35 at leading edge
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, radius, startA, endA);
+      ctx.closePath();
+      const [r, g, b] = hexToRgb(NERVColors.phosphorGreen);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      ctx.fill();
+    }
+
+    // --- Sweep line (the bright leading edge) ---
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(sweep) * radius, cy + Math.sin(sweep) * radius);
+    ctx.strokeStyle = NERVColors.phosphorGreen;
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = NERVColors.phosphorGreen;
+    ctx.shadowBlur = 6;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.restore(); // un-clip
+
+    // --- Range rings ---
+    const ringScales = [0.25, 0.5, 0.75, 1.0];
+    for (const scale of ringScales) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius * scale, 0, Math.PI * 2);
+      ctx.strokeStyle = NERVColors.phosphorGreen;
+      ctx.lineWidth = 0.5;
+      ctx.globalAlpha = 0.3;
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+
+    // --- Crosshairs ---
+    ctx.beginPath();
+    ctx.moveTo(cx - radius, cy);
+    ctx.lineTo(cx + radius, cy);
+    ctx.moveTo(cx, cy - radius);
+    ctx.lineTo(cx, cy + radius);
+    ctx.strokeStyle = NERVColors.phosphorGreen;
+    ctx.lineWidth = 0.5;
+    ctx.globalAlpha = 0.3;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // --- Cardinal labels (N, S, E, W) ---
+    ctx.font = `bold ${Math.max(9, size / 22)}px 'Courier New', monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = NERVColors.textDim;
+    ctx.globalAlpha = 0.6;
+    const labelOffset = radius + 7;
+    ctx.fillText('N', cx, cy - labelOffset);
+    ctx.fillText('S', cx, cy + labelOffset);
+    ctx.fillText('E', cx + labelOffset, cy);
+    ctx.fillText('W', cx - labelOffset, cy);
+    ctx.globalAlpha = 1;
+
+    // --- Outer ring (amber accent) ---
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = NERVColors.amber;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // --- Contacts ---
+    // Ensure glow array matches contacts length
+    if (contactGlowRef.current.length !== contacts.length) {
+      contactGlowRef.current = new Array(contacts.length).fill(0);
+    }
+
+    contacts.forEach((contact, i) => {
+      // Angle: 0 = North (top), clockwise. Convert to canvas radians.
+      // Canvas: 0 = East (right), clockwise. So subtract 90 degrees.
+      const angleRad = ((contact.angle - 90) * Math.PI) / 180;
+      const dist = (contact.distance / 100) * radius;
+      const x = cx + Math.cos(angleRad) * dist;
+      const y = cy + Math.sin(angleRad) * dist;
+      const color = radarContactColors[contact.type] || NERVColors.amber;
+      const [r, g, b] = hexToRgb(color);
+
+      // Check if sweep is passing over this contact (within ~5 degrees)
+      // Normalize both angles to [0, 2pi)
+      let contactCanvasAngle = angleRad;
+      while (contactCanvasAngle < 0) contactCanvasAngle += Math.PI * 2;
+      contactCanvasAngle = contactCanvasAngle % (Math.PI * 2);
+      let sweepNorm = sweep % (Math.PI * 2);
+      while (sweepNorm < 0) sweepNorm += Math.PI * 2;
+
+      let diff = sweepNorm - contactCanvasAngle;
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      if (diff > Math.PI) diff -= Math.PI * 2;
+
+      // If sweep just passed over (within 5 degrees ahead), mark as glowing
+      if (diff >= 0 && diff < (5 * Math.PI) / 180) {
+        contactGlowRef.current[i] = now;
+      }
+
+      // Glow fades over 2 seconds after sweep passes
+      const timeSinceHit = now - contactGlowRef.current[i];
+      const glowFactor = contactGlowRef.current[i] > 0
+        ? Math.max(0, 1 - timeSinceHit / 2000)
+        : 0.15;
+
+      // Outer glow halo
+      const haloAlpha = 0.1 + glowFactor * 0.4;
+      ctx.beginPath();
+      ctx.arc(x, y, 4 + glowFactor * 3, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${haloAlpha})`;
+      ctx.fill();
+
+      // Core dot
+      const coreAlpha = 0.3 + glowFactor * 0.7;
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${coreAlpha})`;
+      if (glowFactor > 0.5) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // --- Center dot ---
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+    ctx.fillStyle = NERVColors.phosphorGreen;
+    ctx.globalAlpha = 0.5;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+    animRef.current = requestAnimationFrame(draw);
+  }, [size, contacts, hexToRgb]);
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Set up high-DPI canvas
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+
+    animRef.current = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+    };
+  }, [size, draw]);
+
   return (
-    <svg width={size} height={size} style={{ display: 'block', margin: '0 auto' }}>
-      <defs>
-        {/* Sweep gradient */}
-        <linearGradient id="sweep-gradient" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={size} y2="0">
-          <stop offset="0%" stopColor="transparent" />
-          <stop offset="70%" stopColor={NERVColors.phosphorGreen} stopOpacity="0.3" />
-          <stop offset="100%" stopColor={NERVColors.phosphorGreen} stopOpacity="0.6" />
-        </linearGradient>
-        
-        {/* Sweep animation */}
-        <style>{`
-          @keyframes radar-sweep {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          .radar-sweep-group {
-            transform-origin: ${centerX}px ${centerY}px;
-            animation: radar-sweep 4s linear infinite;
-          }
-        `}</style>
-      </defs>
-      
-      {/* Background */}
-      <circle cx={centerX} cy={centerY} r={radius} fill={NERVColors.terminalBlack} />
-      
-      {/* Range rings */}
-      {[0.25, 0.5, 0.75, 1].map((scale, i) => (
-        <circle
-          key={i}
-          cx={centerX}
-          cy={centerY}
-          r={radius * scale}
-          fill="none"
-          stroke={NERVColors.phosphorGreen}
-          strokeWidth={0.5}
-          opacity={0.3}
-        />
-      ))}
-      
-      {/* Crosshairs */}
-      <line x1={centerX - radius} y1={centerY} x2={centerX + radius} y2={centerY} 
-            stroke={NERVColors.phosphorGreen} strokeWidth={0.5} opacity={0.3} />
-      <line x1={centerX} y1={centerY - radius} x2={centerX} y2={centerY + radius} 
-            stroke={NERVColors.phosphorGreen} strokeWidth={0.5} opacity={0.3} />
-      
-      {/* Sweeping beam */}
-      <g className="radar-sweep-group">
-        <path
-          d={`M ${centerX} ${centerY} L ${centerX + radius} ${centerY} A ${radius} ${radius} 0 0 1 ${centerX + radius * 0.5} ${centerY - radius * 0.866} Z`}
-          fill="url(#sweep-gradient)"
-        />
-      </g>
-      
-      {/* Contacts */}
-      {contacts.map((contact, i) => {
-        const angleRad = (contact.angle - 90) * (Math.PI / 180);
-        const distance = contact.distance * radius;
-        const x = centerX + Math.cos(angleRad) * distance;
-        const y = centerY + Math.sin(angleRad) * distance;
-        const color = contactColors[contact.type];
-        
-        return (
-          <g key={i}>
-            <circle cx={x} cy={y} r={4} fill={color} opacity={0.5} />
-            <circle cx={x} cy={y} r={2} fill={color} style={{ filter: `drop-shadow(0 0 3px ${color})` }} />
-          </g>
-        );
-      })}
-      
-      {/* Outer ring */}
-      <circle cx={centerX} cy={centerY} r={radius} fill="none" stroke={NERVColors.amber} strokeWidth={1} />
-    </svg>
+    <canvas
+      ref={canvasRef}
+      width={size}
+      height={size}
+      style={{
+        display: 'block',
+        margin: '0 auto',
+        width: size,
+        height: size,
+      }}
+    />
   );
 }
 

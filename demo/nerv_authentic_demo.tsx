@@ -137,6 +137,46 @@ const terrain3DBlips = [
   { id: 'angel', x: 0.7, z: 0.3, type: 'hostile' as const, label: 'TARGET' },
 ];
 
+// ─── GRADIENT BACKPROPAGATION TOPOLOGY ──────────────────────────────────────
+// Neural network layers arranged spatially — gradient flows backward
+const backpropNodes = [
+  // Input layer (right side — forward starts here)
+  { id: 'i0', label: 'x₀', x: 80, y: -30, z: 40, color: '#00CED1', size: 3 },
+  { id: 'i1', label: 'x₁', x: 80, y: 10, z: 0, color: '#00CED1', size: 3 },
+  { id: 'i2', label: 'x₂', x: 80, y: -10, z: -40, color: '#00CED1', size: 3 },
+  // Hidden layer 1
+  { id: 'h0', label: '∂L/∂h₀', x: 20, y: -40, z: 30, color: '#9C27B0', size: 4, pulse: true },
+  { id: 'h1', label: '∂L/∂h₁', x: 20, y: 0, z: -10, color: '#9C27B0', size: 4, pulse: true },
+  { id: 'h2', label: '∂L/∂h₂', x: 20, y: -20, z: -35, color: '#7B1FA2', size: 4 },
+  { id: 'h3', label: '∂L/∂h₃', x: 20, y: 20, z: 20, color: '#7B1FA2', size: 4 },
+  // Hidden layer 2
+  { id: 'g0', label: '∇W₀', x: -40, y: -25, z: 15, color: '#7B1FA2', size: 5, pulse: true },
+  { id: 'g1', label: '∇W₁', x: -40, y: 10, z: -20, color: '#4A148C', size: 5, pulse: true },
+  // Output / loss
+  { id: 'L', label: 'L(θ)', x: -90, y: -10, z: 0, color: '#DC143C', size: 6, pulse: true },
+];
+
+const backpropEdges = [
+  // Forward pass (weak — faded)
+  { source: 'i0', target: 'h0', strength: 0.2 },
+  { source: 'i0', target: 'h1', strength: 0.15 },
+  { source: 'i1', target: 'h1', strength: 0.2 },
+  { source: 'i1', target: 'h2', strength: 0.15 },
+  { source: 'i2', target: 'h2', strength: 0.2 },
+  { source: 'i2', target: 'h3', strength: 0.15 },
+  { source: 'i0', target: 'h3', strength: 0.1 },
+  // Gradient flow (strong — highlighted)
+  { source: 'L', target: 'g0', strength: 0.9 },
+  { source: 'L', target: 'g1', strength: 0.85 },
+  { source: 'g0', target: 'h0', strength: 0.8 },
+  { source: 'g0', target: 'h1', strength: 0.7 },
+  { source: 'g1', target: 'h2', strength: 0.75 },
+  { source: 'g1', target: 'h3', strength: 0.65 },
+  { source: 'h0', target: 'h1', strength: 0.3 },
+  { source: 'h2', target: 'h3', strength: 0.3 },
+  { source: 'g0', target: 'g1', strength: 0.5 },
+];
+
 // ─── STYLES ──────────────────────────────────────────────────────────────────
 
 const PAGE: React.CSSProperties = {
@@ -513,8 +553,6 @@ export function NERVAuthenticDemo() {
                 </NERVPanel>
                 <NERVPanel title="SUBSYSTEMS" titleJa="サブシステム">
                   <StatusGrid
-                    width={300}
-                    height={80}
                     title="EVA-01"
                     titleJa="初号機"
                     cells={[
@@ -565,7 +603,7 @@ export function NERVAuthenticDemo() {
             <div style={CELL}>
               <NERVPanel title="SYNC RATIO — LARGE" titleJa="同期率表示">
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '8px' }}>
-                  <SyncRatioLarge value={syncValue} width={580} height={80} />
+                  <SyncRatioLarge value={syncValue} />
                 </div>
               </NERVPanel>
             </div>
@@ -956,15 +994,44 @@ export function NERVAuthenticDemo() {
                                 SEE ALSO
                               </div>
                               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                                {selectedSkill.reference.relatedSkills.map((rid, i) => (
-                                  <span key={i} style={{
-                                    color: lc, fontSize: 9, padding: '2px 6px',
-                                    border: `1px solid ${lc}44`, background: `${lc}0A`,
-                                    letterSpacing: 0.5,
-                                  }}>
-                                    {rid}
-                                  </span>
-                                ))}
+                                {selectedSkill.reference.relatedSkills.map((rid, i) => {
+                                  const refSkill = CLAUDE_SKILLS.find(s => s.id === rid);
+                                  const refLayerColors: Record<number, string> = {
+                                    0: '#666666', 1: '#00CCFF', 2: '#39FF14', 3: '#FFAA00', 4: '#DC143C', 5: '#FF00FF',
+                                  };
+                                  const rc = refSkill ? (refLayerColors[refSkill.layer] || '#666') : '#555';
+                                  return (
+                                    <span
+                                      key={i}
+                                      onClick={() => {
+                                        if (refSkill) {
+                                          setSelectedSkill(refSkill);
+                                          setDetailPage('reference');
+                                        }
+                                      }}
+                                      style={{
+                                        color: rc, fontSize: 9, padding: '2px 6px',
+                                        border: `1px solid ${rc}44`, background: `${rc}0A`,
+                                        letterSpacing: 0.5,
+                                        cursor: refSkill ? 'pointer' : 'default',
+                                        transition: 'all 0.15s ease',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.background = `${rc}22`;
+                                        e.currentTarget.style.borderColor = `${rc}88`;
+                                        e.currentTarget.style.textShadow = `0 0 6px ${rc}66`;
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.background = `${rc}0A`;
+                                        e.currentTarget.style.borderColor = `${rc}44`;
+                                        e.currentTarget.style.textShadow = 'none';
+                                      }}
+                                      title={refSkill ? `${refSkill.name} ${refSkill.nameJa || ''} — L${refSkill.layer} ${refSkill.category}` : rid}
+                                    >
+                                      {rid}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             </div>
                           )}
@@ -1047,18 +1114,27 @@ export function NERVAuthenticDemo() {
             <div style={CELL}>
               <NERVPanel title="TARGET PROFILE" titleJa="ターゲット情報">
                 <HexTarget
-                  width={300}
                   height={170}
-                  targetName="ANGEL-05"
-                  distance="2,847m"
-                  bearing="047°"
+                  targets={[
+                    { id: 'a5', name: 'ANGEL-05', nameJa: '使徒', distance: '2,847m', bearing: '047°', type: 'hostile', pattern: 'BLUE' },
+                    { id: 'eva02', name: 'EVA-02', nameJa: '弐号機', distance: '1,200m', bearing: '180°', type: 'friendly' },
+                    { id: 'unk1', name: 'UNK-1', nameJa: '不明', distance: '5,100m', bearing: '310°', type: 'unknown', pattern: 'ORANGE' },
+                  ]}
                 />
               </NERVPanel>
             </div>
 
             <div style={CELL}>
-              <NERVPanel title="TACTICAL OPS" titleJa="戦術作戦">
-                <TacticalDisplay height={200} sectorLabel="TOKYO-3" />
+              <NERVPanel title="勾配逆伝播位相空間">
+                <Topology3D
+                  height={200}
+                  color="#7B1FA2"
+                  gridColor="#4A148C"
+                  nodes={backpropNodes}
+                  edges={backpropEdges}
+                  rotationSpeed={0.004}
+                  showGrid
+                />
               </NERVPanel>
             </div>
           </div>
