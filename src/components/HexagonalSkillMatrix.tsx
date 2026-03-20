@@ -134,6 +134,7 @@ export function HexagonalSkillMatrix({
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [mousePos, setMousePos] = useState<{ x: number; y: number } | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [dynamicLayout, setDynamicLayout] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Measure container width for responsive columns
@@ -150,8 +151,8 @@ export function HexagonalSkillMatrix({
     return () => ro.disconnect();
   }, []);
 
-  // Auto-calculate columns from container width (fall back to prop)
-  const effectiveColumns = containerWidth > 0
+  // Auto-calculate columns from container width, or use fixed prop
+  const effectiveColumns = dynamicLayout && containerWidth > 0
     ? Math.max(4, Math.floor((containerWidth - cellSize) / (cellSize * 1.5)))
     : columns;
 
@@ -239,8 +240,23 @@ export function HexagonalSkillMatrix({
             </span>
           )}
         </div>
-        <div style={{ color: NERVColors.textDim }}>
-          CONF: <span style={{ color: NERVColors.phosphorCyan }}>{overallStats.avgConfidence.toFixed(1)}%</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span
+            onClick={() => setDynamicLayout(d => !d)}
+            style={{
+              color: dynamicLayout ? NERVColors.phosphorCyan : NERVColors.textDim,
+              cursor: 'pointer',
+              fontSize: 11,
+              lineHeight: 1,
+              textShadow: dynamicLayout ? `0 0 6px ${NERVColors.phosphorCyan}` : 'none',
+            }}
+            title={dynamicLayout ? 'Switch to fixed layout' : 'Switch to dynamic layout'}
+          >
+            動
+          </span>
+          <span style={{ color: NERVColors.textDim }}>
+            CONF: <span style={{ color: NERVColors.phosphorCyan }}>{overallStats.avgConfidence.toFixed(1)}%</span>
+          </span>
         </div>
       </div>
       
