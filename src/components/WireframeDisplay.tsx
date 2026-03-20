@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { NERVColors } from './NERVPanel';
+import { useVisibility } from '../hooks/useVisibility';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // WIREFRAME TERRAIN DISPLAY - 3D wireframe map with grid overlay
@@ -22,7 +23,7 @@ interface WireframeTerrainProps {
   showContours?: boolean;
 }
 
-export function WireframeTerrain({
+function WireframeTerrainBase({
   width = 400,
   height = 300,
   blips = [],
@@ -254,6 +255,8 @@ export function WireframeTerrain({
   );
 }
 
+export const WireframeTerrain = memo(WireframeTerrainBase);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // RADAR SWEEP DISPLAY - Canvas-based rotating radar with sweep animation
 // Evangelion NERV tactical display style
@@ -274,8 +277,9 @@ const radarContactColors: Record<string, string> = {
   unknown: NERVColors.amber,
 };
 
-export function RadarSweep({ size = 200, contacts = [] }: RadarSweepProps) {
+function RadarSweepBase({ size = 200, contacts = [] }: RadarSweepProps) {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+  const { visibleRef } = useVisibility(canvasRef);
   const animRef = React.useRef<number>(0);
   const sweepAngleRef = React.useRef<number>(0);
   // Track when each contact was last hit by the sweep (stores timestamp)
@@ -292,6 +296,7 @@ export function RadarSweep({ size = 200, contacts = [] }: RadarSweepProps) {
   const draw = React.useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    if (!visibleRef.current) { animRef.current = requestAnimationFrame(draw); return; }
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -346,10 +351,12 @@ export function RadarSweep({ size = 200, contacts = [] }: RadarSweepProps) {
     ctx.lineTo(cx + Math.cos(sweep) * radius, cy + Math.sin(sweep) * radius);
     ctx.strokeStyle = NERVColors.phosphorGreen;
     ctx.lineWidth = 1.5;
-    ctx.shadowColor = NERVColors.phosphorGreen;
-    ctx.shadowBlur = 6;
+    ctx.globalAlpha = 0.3;
+    ctx.lineWidth = 4;
     ctx.stroke();
-    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
     ctx.restore(); // un-clip
 
@@ -448,12 +455,7 @@ export function RadarSweep({ size = 200, contacts = [] }: RadarSweepProps) {
       ctx.beginPath();
       ctx.arc(x, y, 2, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${coreAlpha})`;
-      if (glowFactor > 0.5) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 8;
-      }
       ctx.fill();
-      ctx.shadowBlur = 0;
     });
 
     // --- Center dot ---
@@ -498,6 +500,8 @@ export function RadarSweep({ size = 200, contacts = [] }: RadarSweepProps) {
   );
 }
 
+export const RadarSweep = memo(RadarSweepBase);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // ZONE BOUNDARY DISPLAY - Angular polygon zone markers
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -512,7 +516,7 @@ interface ZoneBoundaryProps {
   }>;
 }
 
-export function ZoneBoundary({ width = 300, height = 200, zones }: ZoneBoundaryProps) {
+function ZoneBoundaryBase({ width = 300, height = 200, zones }: ZoneBoundaryProps) {
   const statusColors = {
     safe: NERVColors.phosphorGreen,
     caution: NERVColors.amber,
@@ -565,5 +569,7 @@ export function ZoneBoundary({ width = 300, height = 200, zones }: ZoneBoundaryP
     </svg>
   );
 }
+
+export const ZoneBoundary = memo(ZoneBoundaryBase);
 
 export default WireframeTerrain;

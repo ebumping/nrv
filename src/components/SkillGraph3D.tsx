@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useCallback, useMemo, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * SkillGraph3D - Neural Mapping Topology
@@ -117,7 +118,7 @@ const DEFAULT_EDGES: SkillEdge3D[] = [
   { source: 'humint', target: 'core', strength: 0.6 },
 ];
 
-export function SkillGraph3D({
+function SkillGraph3DBase({
   height = 500,
   nodes: inputNodes = DEFAULT_NODES,
   edges: inputEdges = DEFAULT_EDGES,
@@ -128,6 +129,7 @@ export function SkillGraph3D({
 }: SkillGraph3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { visibleRef } = useVisibility(containerRef);
 
   // Dynamic grid sizing: more clusters = bigger grid
   const baseNodeCount = useMemo(
@@ -292,7 +294,7 @@ export function SkillGraph3D({
       const segments = 16;
       const wrapAmount = strength;
       const basePhase = edgeIdx * 0.7;
-      const pulse = 0.5 + 0.25 * Math.sin(time * 0.2 + basePhase);
+      const pulse = 0.1 + 0.25 * Math.sin(time * 0.2 + basePhase);
 
       const swayMag = 45 + 135 * pulse;
       const zMag = 35 + 105 * pulse;
@@ -306,7 +308,7 @@ export function SkillGraph3D({
         - wrapAmount * 40 - Math.sin(time * 0.24 + basePhase) * 1.22 * hMag;
       // Never let arcs dip below the topology grid (y ≈ 15)
       // const arcHeight = Math.min(rawArcHeight, 10);
-      const arcHeight = Math.min(rawArcHeight, 1.31);
+      const arcHeight = Math.min(rawArcHeight, 1.07);
       // const arcHeight = Math.min(from.y, to.y) - 30 - Math.abs(from.y - to.y) * 0.3 - wrapAmount * 40;
 
       const points: Projected[] = [];
@@ -355,6 +357,7 @@ export function SkillGraph3D({
       const w = state.width;
       const h = height;
       state.frame++;
+      if (!visibleRef.current) { animId = requestAnimationFrame(render); return; }
       if (!state.dragStart) state.cameraAngle += rotationSpeed * 0.7;
       const time = state.frame * 0.02;
       const camAngle = state.cameraAngle;
@@ -635,4 +638,5 @@ export function SkillGraph3D({
   );
 }
 
+export const SkillGraph3D = memo(SkillGraph3DBase);
 export default SkillGraph3D;

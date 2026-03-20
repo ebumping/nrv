@@ -1,4 +1,5 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * TacticalDisplay - NERV Tactical Operations Display
@@ -40,7 +41,7 @@ const TYPE_COLORS: Record<string, string> = {
   unknown: '#FFAA00',
 };
 
-export function TacticalDisplay({
+function TacticalDisplayBase({
   height = 200,
   units: inputUnits = DEFAULT_UNITS,
   sweepSpeed = 2,
@@ -49,6 +50,7 @@ export function TacticalDisplay({
 }: TacticalDisplayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { visibleRef } = useVisibility(containerRef);
   const stateRef = useRef({
     frame: 0,
     width: 400,
@@ -92,6 +94,7 @@ export function TacticalDisplay({
       const w = state.width;
       const h = height;
       state.frame++;
+      if (!visibleRef.current) { animId = requestAnimationFrame(render); return; }
       const time = state.frame * 0.016;
 
       ctx.fillStyle = '#000';
@@ -428,4 +431,5 @@ export function TacticalDisplay({
   );
 }
 
+export const TacticalDisplay = memo(TacticalDisplayBase);
 export default TacticalDisplay;

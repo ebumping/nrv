@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * WaveformMonitor - NERV-style animated sine braid display
@@ -82,7 +83,7 @@ interface Wave {
   alpha: number;
 }
 
-export function WaveformMonitor({
+function WaveformMonitorBase({
   waveCount = 7,
   color = 'magenta',
   animationSpeed = 50,
@@ -103,7 +104,9 @@ export function WaveformMonitor({
 }: WaveformMonitorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
-  const [time, setTime] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const timeRef = useRef(0);
+  const { visibleRef } = useVisibility(containerRef);
   
   const primaryColor = colorValues[color];
   
@@ -123,192 +126,201 @@ export function WaveformMonitor({
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
   
-  // Animation loop
+  // Single rAF-based render loop (no state-driven re-renders)
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     let lastTime = performance.now();
-    
-    const animate = (currentTime: number) => {
+
+    const resizeCanvas = () => {
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.floor(rect.width);
+      const h = height;
+      const newW = w * dpr;
+      const newH = h * dpr;
+      if (canvas.width === newW && canvas.height === newH) return;
+      canvas.width = newW;
+      canvas.height = newH;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    resizeCanvas();
+    const ro = new ResizeObserver(resizeCanvas);
+    ro.observe(container);
+
+    const render = (currentTime: number) => {
+      if (!visibleRef.current) {
+        animationRef.current = requestAnimationFrame(render);
+        return;
+      }
+
       const delta = currentTime - lastTime;
-      
       if (delta >= animationSpeed) {
-        setTime(t => t + 0.05);
+        timeRef.current += 0.05;
         lastTime = currentTime;
       }
-      
-      animationRef.current = requestAnimationFrame(animate);
-    };
-    
-    animationRef.current = requestAnimationFrame(animate);
-    
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+
+      const time = timeRef.current;
+      const rect = container.getBoundingClientRect();
+      const w = rect.width;
+      const h = rect.height;
+
+      // Clear
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw border lines (top/bottom)
+      if (borderLines) {
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, 1);
+        ctx.lineTo(w, 1);
+        ctx.moveTo(0, h - 1);
+        ctx.lineTo(w, h - 1);
+        ctx.stroke();
       }
-    };
-  }, [animationSpeed]);
-  
-  // Render
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    const rect = canvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-    
-    const w = rect.width;
-    const h = rect.height;
-    
-    // Clear
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, w, h);
-    
-    // Draw border lines (top/bottom)
-    if (borderLines) {
-      ctx.strokeStyle = borderColor;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, 1);
-      ctx.lineTo(w, 1);
-      ctx.moveTo(0, h - 1);
-      ctx.lineTo(w, h - 1);
-      ctx.stroke();
-    }
-    
-    // Draw grid
-    if (showGrid) {
-      const gridSpacingX = w / 10;
-      const gridSpacingY = h / 6;
-      
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-      ctx.lineWidth = 0.5;
-      
-      for (let i = 1; i < 10; i++) {
-        for (let j = 1; j < 6; j++) {
-          const x = i * gridSpacingX;
-          const y = j * gridSpacingY;
-          
-          if (gridMarker === 'plus') {
-            const size = 4;
-            ctx.beginPath();
-            ctx.moveTo(x - size, y);
-            ctx.lineTo(x + size, y);
-            ctx.moveTo(x, y - size);
-            ctx.lineTo(x, y + size);
-            ctx.stroke();
-          } else {
-            const size = 3;
-            ctx.beginPath();
-            ctx.moveTo(x - size, y - size);
-            ctx.lineTo(x + size, y + size);
-            ctx.moveTo(x + size, y - size);
-            ctx.lineTo(x - size, y + size);
-            ctx.stroke();
+
+      // Draw grid
+      if (showGrid) {
+        const gridSpacingX = w / 10;
+        const gridSpacingY = h / 6;
+
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 0.5;
+
+        for (let i = 1; i < 10; i++) {
+          for (let j = 1; j < 6; j++) {
+            const x = i * gridSpacingX;
+            const y = j * gridSpacingY;
+
+            if (gridMarker === 'plus') {
+              const size = 4;
+              ctx.beginPath();
+              ctx.moveTo(x - size, y);
+              ctx.lineTo(x + size, y);
+              ctx.moveTo(x, y - size);
+              ctx.lineTo(x, y + size);
+              ctx.stroke();
+            } else {
+              const size = 3;
+              ctx.beginPath();
+              ctx.moveTo(x - size, y - size);
+              ctx.lineTo(x + size, y + size);
+              ctx.moveTo(x + size, y - size);
+              ctx.lineTo(x - size, y + size);
+              ctx.stroke();
+            }
           }
         }
       }
-    }
-    
-    // Draw Y-axis ticks
-    if (showAxis) {
-      ctx.fillStyle = 'var(--nerv-orange, #FF6600)';
-      ctx.font = '10px var(--nerv-font-mono, monospace)';
-      ctx.textAlign = 'right';
-      
-      const yTicks = 5;
-      for (let i = 0; i <= yTicks; i++) {
-        const y = (i / yTicks) * h;
-        const value = yAxisRange[1] - (i / yTicks) * (yAxisRange[1] - yAxisRange[0]);
-        
-        // Tick mark
-        ctx.strokeStyle = 'var(--nerv-orange, #FF6600)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.setLineDash([2, 2]);
-        ctx.moveTo(20, y);
-        ctx.lineTo(w - 20, y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        
-        // Only label a few
-        if (i % 2 === 0) {
-          ctx.fillText(value.toFixed(0), 16, y + 3);
+
+      // Draw Y-axis ticks
+      if (showAxis) {
+        ctx.fillStyle = '#FF6600';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'right';
+
+        const yTicks = 5;
+        for (let i = 0; i <= yTicks; i++) {
+          const y = (i / yTicks) * h;
+          const value = yAxisRange[1] - (i / yTicks) * (yAxisRange[1] - yAxisRange[0]);
+
+          ctx.strokeStyle = '#FF6600';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.setLineDash([2, 2]);
+          ctx.moveTo(20, y);
+          ctx.lineTo(w - 20, y);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          if (i % 2 === 0) {
+            ctx.fillText(value.toFixed(0), 16, y + 3);
+          }
         }
       }
-    }
-    
-    // Draw X-axis labels
-    if (showAxis) {
-      ctx.fillStyle = 'var(--nerv-orange, #FF6600)';
-      ctx.font = '10px var(--nerv-font-mono, monospace)';
-      ctx.textAlign = 'center';
-      
-      const xTicks = 5;
-      for (let i = 0; i <= xTicks; i++) {
-        const x = 24 + (i / xTicks) * (w - 48);
-        const value = xAxisRange[0] + (i / xTicks) * (xAxisRange[1] - xAxisRange[0]);
-        ctx.fillText(value.toFixed(0), x, h - 4);
-        
-        // Minor ticks
-        ctx.strokeStyle = 'var(--nerv-orange, #FF6600)';
-        ctx.beginPath();
-        ctx.setLineDash([1, 2]);
-        ctx.moveTo(x, 10);
-        ctx.lineTo(x, h - 10);
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-    }
-    
-    // Draw sine waves
-    waves.forEach((wave) => {
-      ctx.strokeStyle = wave.color;
-      ctx.lineWidth = wave.alpha === 1 ? 2 : 1;
-      ctx.beginPath();
-      
-      for (let x = 24; x < w - 24; x++) {
-        const normalizedX = (x - 24) / (w - 48);
-        const value = Math.sin((normalizedX * wave.frequency + time + wave.phase) * Math.PI * 2) * wave.amplitude;
-        const y = (h / 2) - (value * (h / 2) * 0.85);
-        
-        if (x === 24) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
+
+      // Draw X-axis labels
+      if (showAxis) {
+        ctx.fillStyle = '#FF6600';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+
+        const xTicks = 5;
+        for (let i = 0; i <= xTicks; i++) {
+          const x = 24 + (i / xTicks) * (w - 48);
+          const value = xAxisRange[0] + (i / xTicks) * (xAxisRange[1] - xAxisRange[0]);
+          ctx.fillText(value.toFixed(0), x, h - 4);
+
+          ctx.strokeStyle = '#FF6600';
+          ctx.beginPath();
+          ctx.setLineDash([1, 2]);
+          ctx.moveTo(x, 10);
+          ctx.lineTo(x, h - 10);
+          ctx.stroke();
+          ctx.setLineDash([]);
         }
       }
-      
-      ctx.stroke();
-      
-      // Glow effect for primary wave
-      if (wave.alpha === 1) {
-        ctx.shadowColor = primaryColor;
-        ctx.shadowBlur = 8;
+
+      // Draw sine waves — multi-pass glow (no shadowBlur)
+      waves.forEach((wave) => {
+        ctx.strokeStyle = wave.color;
+        ctx.lineWidth = wave.alpha === 1 ? 2 : 1;
+        ctx.beginPath();
+
+        for (let x = 24; x < w - 24; x++) {
+          const normalizedX = (x - 24) / (w - 48);
+          const value = Math.sin((normalizedX * wave.frequency + time + wave.phase) * Math.PI * 2) * wave.amplitude;
+          const y = (h / 2) - (value * (h / 2) * 0.85);
+
+          if (x === 24) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+
         ctx.stroke();
-        ctx.shadowBlur = 0;
+
+        // Glow effect for primary wave — multi-pass (no shadowBlur)
+        if (wave.alpha === 1) {
+          ctx.globalAlpha = 0.15;
+          ctx.lineWidth = 5;
+          ctx.stroke();
+          ctx.globalAlpha = 0.3;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          ctx.lineWidth = 2;
+        }
+      });
+
+      // Draw corner readout
+      if (readout) {
+        ctx.fillStyle = '#FF6600';
+        ctx.font = '11px monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${readoutLabel}: ${readout}`, w - 8, 16);
       }
-    });
-    
-    // Draw corner readout
-    if (readout) {
-      ctx.fillStyle = 'var(--nerv-orange, #FF6600)';
-      ctx.font = '11px var(--nerv-font-mono, monospace)';
-      ctx.textAlign = 'right';
-      ctx.fillText(`${readoutLabel}: ${readout}`, w - 8, 16);
-    }
-    
-  }, [time, waves, showGrid, gridMarker, showAxis, xAxisRange, yAxisRange, borderLines, borderColor, readout, readoutLabel, primaryColor, height, width]);
+
+      animationRef.current = requestAnimationFrame(render);
+    };
+
+    animationRef.current = requestAnimationFrame(render);
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+      ro.disconnect();
+    };
+  }, [animationSpeed, waves, showGrid, gridMarker, showAxis, xAxisRange, yAxisRange, borderLines, borderColor, readout, readoutLabel, primaryColor, height]);
   
   const containerStyle: React.CSSProperties = {
     width,
@@ -319,7 +331,7 @@ export function WaveformMonitor({
   };
   
   return (
-    <div style={containerStyle} className={className}>
+    <div ref={containerRef} style={containerStyle} className={className}>
       <canvas
         ref={canvasRef}
         style={{
@@ -332,4 +344,5 @@ export function WaveformMonitor({
   );
 }
 
+export const WaveformMonitor = memo(WaveformMonitorBase);
 export default WaveformMonitor;

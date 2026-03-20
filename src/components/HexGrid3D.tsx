@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * HexGrid3D - Multi-matrix 3D hexagonal skill taxonomy
@@ -119,7 +120,7 @@ function generateDefaultCells(): HexCell3D[] {
 
 const DEFAULT_GROUP_NAMES = ['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA', 'ECHO'];
 
-export function HexGrid3D({
+function HexGrid3DBase({
   height = 450,
   cells: inputCells,
   layers = 5,
@@ -131,6 +132,7 @@ export function HexGrid3D({
 }: HexGrid3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { visibleRef } = useVisibility(containerRef);
   const stateRef = useRef<{
     cameraAngle: number;
     cameraTilt: number;
@@ -303,6 +305,7 @@ export function HexGrid3D({
       const w = state.width;
       const h = height;
       state.frame++;
+      if (!visibleRef.current) { animId = requestAnimationFrame(render); return; }
 
       // Smooth camera: apply momentum then lerp toward targets
       if (!state.dragStart && !state.panDragStart) {
@@ -645,4 +648,5 @@ export function HexGrid3D({
   );
 }
 
+export const HexGrid3D = memo(HexGrid3DBase);
 export default HexGrid3D;

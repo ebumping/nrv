@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * Topology3D - 3D force-directed network graph
@@ -85,7 +86,7 @@ const DEFAULT_EDGES: Topology3DEdge[] = [
   { source: 'n7', target: 'n4', strength: 0.3 },
 ];
 
-export function Topology3D({
+function Topology3DBase({
   height = 300,
   nodes: inputNodes = DEFAULT_NODES,
   edges: inputEdges = DEFAULT_EDGES,
@@ -97,6 +98,7 @@ export function Topology3D({
 }: Topology3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { visibleRef } = useVisibility(containerRef);
   const stateRef = useRef<{
     simNodes: SimNode[];
     cameraAngle: number;
@@ -220,6 +222,8 @@ export function Topology3D({
       const w = state.width;
       const h = height;
       state.frame++;
+      // Skip rendering when off-screen
+      if (!visibleRef.current) { animId = requestAnimationFrame(render); return; }
       const time = state.frame * 0.016;
       // No auto-rotation — agents drift in latent vectorspace, camera is user-controlled
 
@@ -545,4 +549,5 @@ export function Topology3D({
   );
 }
 
+export const Topology3D = memo(Topology3DBase);
 export default Topology3D;

@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { NERVColors } from './NERVPanel';
+import { useVisibility } from '../hooks/useVisibility';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // HEXAGONAL SKILL MATRIX - Honeycomb visualization for 280-skill taxonomy
@@ -118,7 +119,7 @@ function getHexPosition(index: number, columns: number, cellSize: number): { x: 
   };
 }
 
-export function HexagonalSkillMatrix({
+function HexagonalSkillMatrixBase({
   skills,
   cellSize = 40,
   columns = 8,
@@ -136,6 +137,7 @@ export function HexagonalSkillMatrix({
   const [containerWidth, setContainerWidth] = useState(0);
   const [dynamicLayout, setDynamicLayout] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isVisible } = useVisibility(containerRef);
 
   // Measure container width for responsive columns
   useEffect(() => {
@@ -156,16 +158,16 @@ export function HexagonalSkillMatrix({
     ? Math.max(4, Math.floor((containerWidth - cellSize) / (cellSize * 1.5)))
     : columns;
 
-  // Breathing animation
+  // Breathing animation — paused when off-screen, 100ms interval (10fps is smooth enough for sine)
   useEffect(() => {
-    if (!breathing) return;
+    if (!breathing || !isVisible) return;
 
     const interval = setInterval(() => {
-      setBreathPhase(p => (p + 1) % 360);
-    }, 50);
+      setBreathPhase(p => (p + 2) % 360);
+    }, 100);
 
     return () => clearInterval(interval);
-  }, [breathing]);
+  }, [breathing, isVisible]);
 
   // Calculate SVG dimensions
   const rows = Math.ceil(skills.length / effectiveColumns);
@@ -589,6 +591,8 @@ export function HexagonalSkillMatrix({
   );
 }
 
+export const HexagonalSkillMatrix = memo(HexagonalSkillMatrixBase);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // MINI HEXAGON GRID - Compact version for sidebar panels
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -613,7 +617,7 @@ export interface MiniHexGridProps {
   columns?: number;
 }
 
-export function MiniHexGrid({
+function MiniHexGridBase({
   count,
   activeIndices = [],
   warningIndices = [],
@@ -663,6 +667,8 @@ export function MiniHexGrid({
   );
 }
 
+export const MiniHexGrid = memo(MiniHexGridBase);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // HEXAGON PROGRESS RING - Circular hexagon progress indicator
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -684,7 +690,7 @@ export interface HexProgressRingProps {
   status?: 'normal' | 'warning' | 'danger';
 }
 
-export function HexProgressRing({
+function HexProgressRingBase({
   progress,
   size = 80,
   label,
@@ -772,5 +778,7 @@ export function HexProgressRing({
     </div>
   );
 }
+
+export const HexProgressRing = memo(HexProgressRingBase);
 
 export default HexagonalSkillMatrix;

@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * ContourMap - NERV-style flow field / topographic visualization
@@ -105,7 +106,7 @@ const densityConfig = {
   dense: { lines: 35, opacity: 0.4 },
 };
 
-export function ContourMap({
+function ContourMapBase({
   width = '100%',
   height = 300,
   contourColor = 'cyan',
@@ -127,6 +128,7 @@ export function ContourMap({
 }: ContourMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { isVisible } = useVisibility(containerRef);
   const [contourLines, setContourLines] = useState<ContourLine[]>([]);
   const [animationFrame, setAnimationFrame] = useState(0);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -203,16 +205,18 @@ export function ContourMap({
     setContourLines(lines);
   }, [animationFrame, density, vbWidth]);
   
-  // Animate contours
+  // Animate contours — paused when off-screen
   useEffect(() => {
     generateContours();
-    
+
+    if (!isVisible) return;
+
     const interval = setInterval(() => {
       setAnimationFrame(f => f + 1);
     }, 100);
-    
+
     return () => clearInterval(interval);
-  }, [generateContours]);
+  }, [generateContours, isVisible]);
   
   // Render crosshair marker
   const renderCrosshair = (x: number, y: number, size: number = 10) => {
@@ -498,4 +502,5 @@ export function ContourMap({
   );
 }
 
+export const ContourMap = memo(ContourMapBase);
 export default ContourMap;

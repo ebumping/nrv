@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * HoloGlobe - 3D wireframe globe/sphere display
@@ -54,7 +55,7 @@ const DEFAULT_MARKERS: GlobeMarker[] = [
   { id: 'relay-1', lat: -33.8, lon: 151.2, label: 'RELAY', color: '#FFAA00' },
 ];
 
-export function HoloGlobe({
+function HoloGlobeBase({
   height = 300,
   radius: inputRadius,
   wireColor = '#FF8800',
@@ -68,6 +69,7 @@ export function HoloGlobe({
 }: HoloGlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { visibleRef } = useVisibility(containerRef);
   const stateRef = useRef<{
     rotY: number;
     tilt: number;
@@ -160,6 +162,7 @@ export function HoloGlobe({
       const h = height;
       const r = inputRadius || Math.min(w, h) * 0.35;
       state.frame++;
+      if (!visibleRef.current) { animId = requestAnimationFrame(render); return; }
       if (!state.dragStart) state.rotY += rotationSpeed;
       const rotY = state.rotY;
 
@@ -264,30 +267,33 @@ export function HoloGlobe({
         const mColor = marker.color || wireColor;
         const mSize = marker.size || 3;
 
-        // Pulse ring
+        // Pulse ring — multi-pass glow (no shadowBlur)
         if (marker.pulse) {
           const pulse = 1 + 0.5 * Math.sin(state.frame * 0.08);
-          ctx.globalAlpha = 0.15 * pulse;
           ctx.fillStyle = mColor;
-          ctx.shadowColor = mColor;
-          ctx.shadowBlur = 12;
+          ctx.globalAlpha = 0.06 * pulse;
+          ctx.beginPath();
+          ctx.arc(proj.x, proj.y, mSize * 5 * pulse, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 0.12 * pulse;
           ctx.beginPath();
           ctx.arc(proj.x, proj.y, mSize * 4 * pulse, 0, Math.PI * 2);
           ctx.fill();
         }
 
         // Outer glow
-        ctx.globalAlpha = 0.3;
         ctx.fillStyle = mColor;
-        ctx.shadowColor = mColor;
-        ctx.shadowBlur = 8;
+        ctx.globalAlpha = 0.1;
+        ctx.beginPath();
+        ctx.arc(proj.x, proj.y, mSize * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.25;
         ctx.beginPath();
         ctx.arc(proj.x, proj.y, mSize * 2, 0, Math.PI * 2);
         ctx.fill();
 
         // Core
         ctx.globalAlpha = 0.9;
-        ctx.shadowBlur = 4;
         ctx.beginPath();
         ctx.arc(proj.x, proj.y, mSize, 0, Math.PI * 2);
         ctx.fill();
@@ -296,7 +302,6 @@ export function HoloGlobe({
         if (marker.label) {
           ctx.globalAlpha = 0.8;
           ctx.fillStyle = mColor;
-          ctx.shadowBlur = 2;
           ctx.font = "9px 'Share Tech Mono', monospace";
           ctx.textAlign = 'left';
           ctx.fillText(marker.label, proj.x + mSize + 5, proj.y + 3);
@@ -312,7 +317,6 @@ export function HoloGlobe({
         }
       }
 
-      ctx.shadowBlur = 0;
 
       // === CORNER DATA READOUTS ===
       ctx.globalAlpha = 0.6;
@@ -417,4 +421,5 @@ export function HoloGlobe({
   );
 }
 
+export const HoloGlobe = memo(HoloGlobeBase);
 export default HoloGlobe;

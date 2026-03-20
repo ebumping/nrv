@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, memo, useCallback } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 import { NERVColors } from './NERVPanel';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -26,7 +27,7 @@ interface RadarDisplayProps {
   centerLabel?: string;
 }
 
-export function RadarDisplay({
+function RadarDisplayBase({
   size = 200,
   targets = [],
   sweepSpeed = 4,
@@ -36,55 +37,64 @@ export function RadarDisplay({
   alertMode = false,
   centerLabel: _centerLabel = 'EVA-01',
 }: RadarDisplayProps) {
-  const [sweepAngle, setSweepAngle] = useState(0);
-  const [blipAges, setBlipAges] = useState<Map<string, number>>(new Map());
+  const [, forceRender] = useState(0);
+  const sweepAngleRef = useRef(0);
+  const blipAgesRef = useRef<Map<string, number>>(new Map());
   const animationRef = useRef<number>();
   const lastTimeRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { visibleRef } = useVisibility(containerRef);
+  const frameCountRef = useRef(0);
   
-  // Animate sweep rotation
+  // Animate sweep rotation — refs + throttled forceRender (no per-frame setState)
   useEffect(() => {
     const animate = (timestamp: number) => {
       if (!lastTimeRef.current) lastTimeRef.current = timestamp;
       const delta = timestamp - lastTimeRef.current;
-      
-      // Calculate new angle
+
+      if (!visibleRef.current) {
+        lastTimeRef.current = timestamp;
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      // Update angle in ref
       const degreesPerMs = 360 / (sweepSpeed * 1000);
-      setSweepAngle(prev => (prev + degreesPerMs * delta) % 360);
-      
-      // Age blips
-      setBlipAges(prev => {
-        const next = new Map(prev);
-        for (const [id, age] of next) {
-          if (age > 100) next.delete(id);
-          else next.set(id, age + delta * 0.1);
+      sweepAngleRef.current = (sweepAngleRef.current + degreesPerMs * delta) % 360;
+
+      // Age blips in ref
+      const ages = blipAgesRef.current;
+      for (const [id, age] of ages) {
+        if (age > 100) ages.delete(id);
+        else ages.set(id, age + delta * 0.1);
+      }
+
+      // Check if sweep passes a target
+      for (const target of targets) {
+        const angleDiff = Math.abs((sweepAngleRef.current - target.angle + 180) % 360 - 180);
+        if (angleDiff < 5) {
+          if (ages.get(target.id) === undefined || ages.get(target.id)! > 50) {
+            ages.set(target.id, 0);
+          }
         }
-        return next;
-      });
-      
+      }
+
       lastTimeRef.current = timestamp;
+      frameCountRef.current++;
+
+      // Trigger React re-render at ~30fps instead of every rAF frame (~60fps)
+      if (frameCountRef.current % 2 === 0) {
+        forceRender(n => n + 1);
+      }
+
       animationRef.current = requestAnimationFrame(animate);
     };
-    
+
     animationRef.current = requestAnimationFrame(animate);
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
-  }, [sweepSpeed]);
-  
-  // When sweep passes a target, refresh its blip
-  useEffect(() => {
-    for (const target of targets) {
-      const angleDiff = Math.abs((sweepAngle - target.angle + 180) % 360 - 180);
-      if (angleDiff < 5) {
-        setBlipAges(prev => {
-          if (prev.get(target.id) === undefined || prev.get(target.id)! > 50) {
-            return new Map(prev).set(target.id, 0);
-          }
-          return prev;
-        });
-      }
-    }
-  }, [sweepAngle, targets]);
+  }, [sweepSpeed, targets]);
   
   const center = size / 2;
   const radius = (size / 2) - 10;
@@ -109,6 +119,8 @@ export function RadarDisplay({
   };
   
   // Sweep end position
+  const sweepAngle = sweepAngleRef.current;
+  const blipAges = blipAgesRef.current;
   const sweepRad = ((sweepAngle - 90) * Math.PI) / 180;
   const sweepEnd = {
     x: center + radius * Math.cos(sweepRad),
@@ -139,7 +151,7 @@ export function RadarDisplay({
   };
   
   return (
-    <div style={containerStyle}>
+    <div ref={containerRef} style={containerStyle}>
       <div style={svgContainerStyle}>
         <svg width={size} height={size} style={{ display: 'block' }}>
           <defs>
@@ -313,6 +325,8 @@ export function RadarDisplay({
   );
 }
 
+export const RadarDisplay = memo(RadarDisplayBase);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // RADAR SCOPE - Full panel with radar and controls
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -326,7 +340,7 @@ interface RadarScopeProps {
 
 const RANGES = ['1 KM', '5 KM', '10 KM', '50 KM'];
 
-export function RadarScope({ 
+function RadarScopeBase({ 
   targets = [], 
   alertMode = false,
   range = 1,
@@ -428,6 +442,8 @@ export function RadarScope({
   );
 }
 
+export const RadarScope = memo(RadarScopeBase);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // SONAR DISPLAY - PING-style display for underwater/subterranean
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -438,7 +454,7 @@ interface SonarDisplayProps {
   pingInterval?: number;
 }
 
-export function SonarDisplay({ 
+function SonarDisplayBase({ 
   size = 150,
   pings = [],
   pingInterval = 2000
@@ -446,21 +462,24 @@ export function SonarDisplay({
   const [pingPhase, setPingPhase] = useState(0);
   const [expansionRing, setExpansionRing] = useState(0);
   
-  // Animate ping expansion
+  // Animate ping expansion — throttled to 30fps
   useEffect(() => {
     const startTime = Date.now();
+    let frameCount = 0;
+    let frameId: number;
     const animate = () => {
-      const elapsed = Date.now() - startTime;
-      const cycle = elapsed % pingInterval;
-      const phase = cycle / pingInterval;
-      
-      setPingPhase(phase);
-      setExpansionRing(phase * size);
-      
-      requestAnimationFrame(animate);
+      frameCount++;
+      if (frameCount % 2 === 0) {
+        const elapsed = Date.now() - startTime;
+        const cycle = elapsed % pingInterval;
+        const phase = cycle / pingInterval;
+        setPingPhase(phase);
+        setExpansionRing(phase * size);
+      }
+      frameId = requestAnimationFrame(animate);
     };
-    
-    const frameId = requestAnimationFrame(animate);
+
+    frameId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frameId);
   }, [size, pingInterval]);
   
@@ -528,4 +547,6 @@ export function SonarDisplay({
   );
 }
 
-export default RadarDisplay;
+export const SonarDisplay = memo(SonarDisplayBase);
+
+export default memo(RadarDisplayBase);

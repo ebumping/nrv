@@ -1,4 +1,5 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, memo } from 'react';
+import { useVisibility } from '../hooks/useVisibility';
 
 /**
  * Terrain3D - 3D wireframe terrain with height displacement
@@ -53,7 +54,7 @@ const DEFAULT_BLIPS: TerrainBlip[] = [
   { id: 'angel', x: 0.7, z: 0.3, type: 'hostile', label: 'TARGET' },
 ];
 
-export function Terrain3D({
+function Terrain3DBase({
   height = 240,
   gridSize = 32,
   heightScale = 30,
@@ -65,6 +66,7 @@ export function Terrain3D({
 }: Terrain3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { visibleRef } = useVisibility(containerRef);
   const stateRef = useRef<{
     heightMap: number[][];
     cameraAngle: number;
@@ -187,6 +189,7 @@ export function Terrain3D({
       const w = state.width;
       const h = height;
       state.frame++;
+      if (!visibleRef.current) { animId = requestAnimationFrame(render); return; }
       if (!state.dragStart) state.cameraAngle += rotationSpeed;
 
       if (state.heightMap.length === 0) {
@@ -280,23 +283,24 @@ export function Terrain3D({
         const bSize = Math.max(3, 5 * bp.scale);
         const depthAlpha = Math.max(0.4, Math.min(1, 400 / bp.z));
 
-        // Pulsing outer ring
+        // Pulsing outer ring — multi-pass glow (no shadowBlur)
         const pulse = 1 + 0.4 * Math.sin(state.frame * 0.1);
-        ctx.globalAlpha = depthAlpha * 0.2;
         ctx.fillStyle = bColor;
-        ctx.shadowColor = bColor;
-        ctx.shadowBlur = 12;
+        ctx.globalAlpha = depthAlpha * 0.06;
+        ctx.beginPath();
+        ctx.arc(bp.x, bp.y, bSize * 4 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = depthAlpha * 0.12;
         ctx.beginPath();
         ctx.arc(bp.x, bp.y, bSize * 2.5 * pulse, 0, Math.PI * 2);
         ctx.fill();
 
         // Core
-        ctx.globalAlpha = depthAlpha;
-        ctx.shadowBlur = 6;
+        ctx.globalAlpha = depthAlpha * 0.9;
         ctx.beginPath();
         ctx.arc(bp.x, bp.y, bSize, 0, Math.PI * 2);
         ctx.fill();
-        ctx.shadowBlur = 0;
 
         // Crosshair for hostile
         if (blip.type === 'hostile') {
@@ -334,16 +338,13 @@ export function Terrain3D({
         if (blip.label) {
           ctx.globalAlpha = depthAlpha * 0.9;
           ctx.fillStyle = bColor;
-          ctx.shadowColor = bColor;
-          ctx.shadowBlur = 2;
+
           ctx.font = `${Math.max(8, Math.min(11, bSize * 1.8))}px 'Share Tech Mono', monospace`;
           ctx.textAlign = 'left';
           ctx.fillText(blip.label, bp.x + bSize + 4, bp.y + 3);
         }
       }
-      ctx.shadowBlur = 0;
 
-      ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
 
       // Info footer
@@ -434,4 +435,5 @@ export function Terrain3D({
   );
 }
 
+export const Terrain3D = memo(Terrain3DBase);
 export default Terrain3D;
