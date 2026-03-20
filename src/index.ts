@@ -143,8 +143,24 @@ export {
 } from './components/HexagonalDisplay';
 
 // Wireframe Display
-export { 
-  WireframeTerrain, 
-  RadarSweep, 
-  ZoneBoundary 
+export {
+  WireframeTerrain,
+  RadarSweep,
+  ZoneBoundary
 } from './components/WireframeDisplay';
+
+// 3D Visualizations
+export { Topology3D } from './components/Topology3D';
+export type { Topology3DProps, Topology3DNode, Topology3DEdge } from './components/Topology3D';
+
+export { Terrain3D } from './components/Terrain3D';
+export type { Terrain3DProps, TerrainBlip } from './components/Terrain3D';
+
+export { SkillGraph3D } from './components/SkillGraph3D';
+export type { SkillGraph3DProps, SkillNode3D, SkillEdge3D } from './components/SkillGraph3D';
+
+export { HoloGlobe } from './components/HoloGlobe';
+export type { HoloGlobeProps, GlobeMarker } from './components/HoloGlobe';
+
+export { HexGrid3D } from './components/HexGrid3D';
+export type { HexGrid3DProps, HexCell3D } from './components/HexGrid3D';

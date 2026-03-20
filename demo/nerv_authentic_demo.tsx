@@ -377,7 +377,7 @@ export function NERVAuthenticDemo() {
               nodes={topology3DNodes}
               edges={topology3DEdges}
               showGrid
-              showParticles={false}
+              showParticles
               rotationSpeed={0.004}
             />
           </HUDFrame>
@@ -674,10 +674,10 @@ export function NERVAuthenticDemo() {
             cornerBrackets
           >
             <HexGrid3D
-              height={320}
-              layers={3}
-              hexSize={18}
-              rotationSpeed={0.005}
+              height={450}
+              layers={5}
+              hexSize={16}
+              rotationSpeed={0.004}
               showConnections
             />
           </HUDFrame>
